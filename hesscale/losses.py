@@ -2,6 +2,8 @@ from .derivatives import (
     CrossEntropyLossDerivativesHesScale,
     MSELossDerivativesHesScale,
     NLLLossDerivativesHesScale,
+    RastriginLossDerivativesHesScale,
+    RosenbrockLossDerivativesHesScale,
 )
 from .hesscale_base import BaseModuleHesScale
 
@@ -24,3 +26,11 @@ class CrossEntropyLossHesScale(LossHesScale):
 class NLLLossHesScale(LossHesScale):
     def __init__(self):
         super().__init__(derivatives=NLLLossDerivativesHesScale())
+
+class RastriginLossHesScale(LossHesScale):
+    def __init__(self):
+        super().__init__(derivatives=RastriginLossDerivativesHesScale())
+
+class RosenbrockLossHesScale(LossHesScale):
+    def __init__(self):
+        super().__init__(derivatives=RosenbrockLossDerivativesHesScale())

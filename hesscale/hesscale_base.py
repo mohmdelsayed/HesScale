@@ -1,5 +1,5 @@
 from backpack.extensions.module_extension import ModuleExtension
-
+from hesscale.derivatives import LINEAR, CONV, LOSS, ACTIVATION
 
 class BaseModuleHesScale(ModuleExtension):
     def __init__(self, derivatives, params=None):
