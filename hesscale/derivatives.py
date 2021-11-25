@@ -19,13 +19,9 @@ from backpack.core.derivatives.conv_transposend import ConvTransposeNDDerivative
 from backpack.core.derivatives.convnd import ConvNDDerivatives
 from backpack.core.derivatives.flatten import FlattenDerivatives
 
-from backpack.core.derivatives.zeropad2d import ZeroPad2dDerivatives
-from backpack.core.derivatives.avgpool1d import AvgPool1DDerivatives
-from backpack.core.derivatives.avgpool2d import AvgPool2DDerivatives
-from backpack.core.derivatives.avgpool3d import AvgPool3DDerivatives
-from backpack.core.derivatives.maxpool1d import MaxPool1DDerivatives
-from backpack.core.derivatives.maxpool2d import MaxPool2DDerivatives
-from backpack.core.derivatives.maxpool3d import MaxPool3DDerivatives
+from backpack.core.derivatives.avgpoolnd import AvgPoolNDDerivatives
+from backpack.core.derivatives.maxpoolnd import MaxPoolNDDerivatives
+import torch
 from einops import rearrange
 from torch.nn.grad import _grad_input_padding
 
@@ -45,7 +41,9 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
             )
         elif ACTIVATION in mat:
             return (
-                self.conv_matrix(module, (mat[0] + mat[1]).squeeze(0), sq=True).unsqueeze(0),
+                self.conv_matrix(
+                    module, (mat[0] + mat[1]).squeeze(0), sq=True
+                ).unsqueeze(0),
                 self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
                 CONV,
             )
@@ -56,7 +54,7 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
         else:
             raise NotImplementedError("Not supported conv")
 
-    def conv_matrix(self, module, mat, sq=False):        
+    def conv_matrix(self, module, mat, sq=False):
         weight = module.weight ** 2 if sq else module.weight
         
         input_size = list(module.input0.size())
@@ -82,19 +80,117 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
             dilation=module.dilation,
         )
 
-class Conv1DDerivativesHesScale(ConvDerivativesHesScale):
-    def __init__(self):
-        super().__init__(N=1)
+class ConvTransposeDerivativesHesScale(ConvTransposeNDDerivatives):
+    def diag_hessian(self, module, g_inp, g_out, mat):
+        if LOSS in mat:
+            return (
+                self.conv_matrix(module, mat[0].squeeze(0), sq=True).unsqueeze(0),
+                self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
+                CONV,
+            )
+        elif ACTIVATION in mat:
+            return (
+                self.conv_matrix(
+                    module, (mat[0] + mat[1]).squeeze(0), sq=True
+                ).unsqueeze(0),
+                self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
+                CONV,
+            )
+        elif CONV in mat or LINEAR in mat:
+            raise NotImplementedError(
+                "Consecetive Conv2d/Conv2d or Conv2d/Linear not supported"
+            )
+        else:
+            raise NotImplementedError("Not supported conv")
+
+    def conv_matrix(self, module, mat, sq=False):
+        jac_t = self.conv_func(
+            mat,
+            module.weight,
+            bias=None,
+            stride=module.stride,
+            padding=module.padding,
+            dilation=module.dilation,
+            groups=module.groups,
+        )
+
+        for dim in range(self.conv_dims):
+            axis = dim + 1
+            size = module.input0.shape[axis]
+            jac_t = jac_t.narrow(axis, 0, size)
+
+        return jac_t
 
 
-class Conv2DDerivativesHesScale(ConvDerivativesHesScale):
-    def __init__(self):
-        super().__init__(N=2)
+class AvgPoolNDDerivativesHesScale(AvgPoolNDDerivatives):
+    def diag_hessian(self, module, g_inp, g_out, mat):
+        if LOSS in mat:
+            mat = mat[0]
+        elif ACTIVATION in mat:
+            mat = mat[0] + mat[1]
+        elif CONV in mat or LINEAR in mat:
+            raise NotImplementedError(
+                "Consecetive Pooling/Conv2d or Pooling/Linear not supported"
+            )
+        else:
+            raise NotImplementedError("Not supported conv")
+
+        # self.check_exotic_parameters(module)
+        # mat_as_pool = self.__make_single_channel(mat÷, module)
+        jmp_as_pool = self.conv_matrix(module, mat)
+        # self.__check_jmp_out_as_pool(mat, jmp_as_pool, module)
+
+        return self.reshape_like_output(jmp_as_pool, module)
+    def __make_single_channel(self, mat, module):
+        """Create fake single-channel images, grouping batch,
+        class and channel dimension."""
+        result = rearrange(mat, "v n c ... -> (v n c) ...")
+        C_axis = 1
+        return result.unsqueeze(C_axis)
+    
+    def __check_jmp_out_as_pool(self, mat, jmp_as_pool, module):
+        V = mat.size(0)
+        if self.N == 1:
+            N, C_out, L_out = module.output.shape
+            assert jmp_as_pool.shape == (V * N * C_out, 1, L_out)
+        elif self.N == 2:
+            N, C_out, H_out, W_out = module.output.shape
+            assert jmp_as_pool.shape == (V * N * C_out, 1, H_out, W_out)
+        elif self.N == 3:
+            N, C_out, D_out, H_out, W_out = module.output.shape
+            assert jmp_as_pool.shape == (V * N * C_out, 1, D_out, H_out, W_out)
+
+    def conv_matrix(self, module, mat):
+        convnd = self.conv(
+            in_channels=1,
+            out_channels=1,
+            kernel_size=module.kernel_size,
+            stride=module.stride,
+            padding=module.padding,
+            bias=False,
+        ).to(module.input0.device)
+
+        convnd.weight.requires_grad = False
+        avg_kernel = torch.ones_like(convnd.weight) / (convnd.weight.numel() ** 2)
+        convnd.weight.data = avg_kernel
+
+        return convnd(mat)
 
 
-class Conv3DDerivativesHesScale(ConvDerivativesHesScale):
-    def __init__(self):
-        super().__init__(N=3)
+class MaxPoolNDDerivativesHesScale(MaxPoolNDDerivatives):
+    def diag_hessian(self, module, g_inp, g_out, mat):
+        if LOSS in mat:
+            mat = mat[0]
+        elif ACTIVATION in mat:
+            mat = mat[0] + mat[1]
+        elif CONV in mat or LINEAR in mat:
+            raise NotImplementedError(
+                "Consecetive Pooling/Conv2d or Pooling/Linear not supported"
+            )
+        else:
+            raise NotImplementedError("Not supported conv")
+
+        return self._jac_t_mat_prod(module, g_inp, g_out, mat)
 
 
 class FlattenDerivativesHesScale(FlattenDerivatives):
@@ -126,54 +222,6 @@ class FlattenDerivativesHesScale(FlattenDerivatives):
             raise NotImplemented("Not supported")
 
 
-class AvgPool1DDerivativesHesScale(AvgPool1DDerivatives):
-    def __init__(self):
-        super().__init__()
-
-    def diag_hessian(self, module, g_inp, g_out, mat):
-        return (zeros_like(module.input0).unsqueeze(0), LOSS)
-
-
-class AvgPool2DDerivativesHesScale(AvgPool2DDerivatives):
-    def __init__(self):
-        super().__init__()
-
-    def diag_hessian(self, module, g_inp, g_out, mat):
-        return (zeros_like(module.input0).unsqueeze(0), LOSS)
-
-
-class AvgPool3DDerivativesHesScale(AvgPool3DDerivatives):
-    def __init__(self):
-        super().__init__()
-
-    def diag_hessian(self, module, g_inp, g_out, mat):
-        return (zeros_like(module.input0).unsqueeze(0), LOSS)
-
-
-class MaxPool1DDerivativesHesScale(MaxPool1DDerivatives):
-    def __init__(self):
-        super().__init__()
-
-    def diag_hessian(self, module, g_inp, g_out, mat):
-        return (zeros_like(module.input0).unsqueeze(0), LOSS)
-
-
-class MaxPool2DDerivativesHesScale(MaxPool2DDerivatives):
-    def __init__(self):
-        super().__init__()
-
-    def diag_hessian(self, module, g_inp, g_out, mat):
-        return (zeros_like(module.input0).unsqueeze(0), LOSS)
-
-
-class MaxPool3DDerivativesHesScale(MaxPool3DDerivatives):
-    def __init__(self):
-        super().__init__()
-
-    def diag_hessian(self, module, g_inp, g_out, mat):
-        return (zeros_like(module.input0).unsqueeze(0), LOSS)
-
-
 #############################################
 #                   MLP                     #
 #############################################
@@ -193,8 +241,12 @@ class LinearDerivativesHesScale(LinearDerivatives):
                 einsum("nd,di->...ni", (g_out[0], module.weight.data)),
                 LINEAR,
             )
-        elif LINEAR in mat:
-            raise NotImplementedError("No consecetive linear layers are supported")
+        elif LINEAR in mat: #TODO
+            return (
+                einsum("oi,vno->vni", (module.weight.data ** 2, mat[0])),
+                einsum("nd,di->ni", (mat[1].squeeze(0), module.weight.data)).unsqueeze(0),
+                LINEAR,
+            )
         else:
             raise NotImplementedError("Not supported")
 
@@ -286,7 +338,9 @@ class BaseActivationDerivatives(ElementwiseDerivatives):
             )
         elif ACTIVATION in mat:
             if FLATTEN in mat:
-                raise NotImplementedError("Flatten between two activations not supported")
+                raise NotImplementedError(
+                    "Flatten between two activations not supported"
+                )
             prev_lin = mat[2]
             prev_d2f = mat[3]
             prev_df = mat[4]
@@ -404,46 +458,6 @@ class LogSigmoidDerivativesHesScale(BaseActivationDerivatives, LogSigmoidDerivat
         super().__init__()
 
 
-class ConvTransposeDerivativesHesScale(ConvTransposeNDDerivatives):    
-    def diag_hessian(self, module, g_inp, g_out, mat):
-        if LOSS in mat:
-            return (
-                self.conv_matrix(module, mat[0].squeeze(0), sq=True).unsqueeze(0),
-                self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
-                CONV,
-            )
-        elif ACTIVATION in mat:
-            return (
-                self.conv_matrix(module, (mat[0] + mat[1]).squeeze(0), sq=True).unsqueeze(0),
-                self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
-                CONV,
-            )
-        elif CONV in mat or LINEAR in mat:
-            raise NotImplementedError(
-                "Consecetive Conv2d/Conv2d or Conv2d/Linear not supported"
-            )
-        else:
-            raise NotImplementedError("Not supported conv")
-
-    def conv_matrix(self, module, mat, sq=False):        
-        jac_t = self.conv_func(
-            mat,
-            module.weight,
-            bias=None,
-            stride=module.stride,
-            padding=module.padding,
-            dilation=module.dilation,
-            groups=module.groups,
-        )
-
-        for dim in range(self.conv_dims):
-            axis = dim + 1
-            size = module.input0.shape[axis]
-            jac_t = jac_t.narrow(axis, 0, size)
-
-        return jac_t
-
-
 class ConvTranspose1DDerivativesHesScale(ConvTransposeDerivativesHesScale):
     def __init__(self):
         super().__init__(N=1)
@@ -455,5 +469,50 @@ class ConvTranspose2DDerivativesHesScale(ConvTransposeDerivativesHesScale):
 
 
 class ConvTranspose3DDerivativesHesScale(ConvTransposeDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=3)
+
+
+class Conv1DDerivativesHesScale(ConvDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=1)
+
+
+class Conv2DDerivativesHesScale(ConvDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=2)
+
+
+class Conv3DDerivativesHesScale(ConvDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=3)
+
+
+class AvgPool1DDerivativesHesScale(AvgPoolNDDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=1)
+
+
+class AvgPool2DDerivativesHesScale(AvgPoolNDDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=2)
+
+
+class AvgPool3DDerivativesHesScale(AvgPoolNDDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=3)
+
+
+class MaxPool1DDerivativesHesScale(MaxPoolNDDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=1)
+
+
+class MaxPool2DDerivativesHesScale(MaxPoolNDDerivativesHesScale):
+    def __init__(self):
+        super().__init__(N=2)
+
+
+class MaxPool3DDerivativesHesScale(MaxPoolNDDerivativesHesScale):
     def __init__(self):
         super().__init__(N=3)
