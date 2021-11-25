@@ -1,24 +1,28 @@
 from torch import einsum
-from hesscale.derivatives import LOSS
+from hesscale.derivatives import LOSS, LINEAR, CONV, ACTIVATION
+
 
 def extract_weight_diagonal(module, backproped, sum_batch=True):
-    if sum_batch:
-        equation = "vno,ni->oi"
-    else:
-        equation = "vno,ni->noi"
+    equation = "vno,ni->oi" if sum_batch else "vno,ni->noi"
 
-    if LOSS in backproped:
-        return einsum(equation, (backproped[0], module.input0 ** 2))
+    if LOSS in backproped or LINEAR in backproped or CONV in backproped:
+        d2Ld2a = backproped[0]
+    elif ACTIVATION in backproped:
+        d2Ld2a = backproped[0] + backproped[1]
     else:
-        return einsum(equation, (backproped[0] + backproped[1], module.input0 ** 2))
+        raise NotImplementedError("No valid layer")
+
+    return einsum(equation, (d2Ld2a, module.input0 ** 2))
 
 
 def extract_bias_diagonal(module, backproped, sum_batch=True):
-    if sum_batch:
-        equation = "vno->o"
+    equation = "vno->o" if sum_batch else "vno->no"
+
+    if LOSS in backproped or LINEAR in backproped or CONV in backproped:
+        d2Ld2a = backproped[0]
+    elif ACTIVATION in backproped:
+        d2Ld2a = backproped[0] + backproped[1]
     else:
-        equation = "vno->no"
-    if LOSS in backproped:
-        return einsum(equation, (backproped[0]))
-    else:
-        return einsum(equation, (backproped[0] + backproped[1]))
+        raise NotImplementedError("No valid layer")
+
+    return einsum(equation, (d2Ld2a))
