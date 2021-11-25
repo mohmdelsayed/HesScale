@@ -1,0 +1,19 @@
+save_directory: "data/"
+exp_name: "comp-hessian"
+env_name: "Classification"
+
+lr: 0.0004  # learning rate (support multiple lrs in a list)
+n_seeds: 40                 # number of seeds in the experiment
+n_processes: 8
+
+predictor_params: 
+    hidden_units: 16         # number of hidden units
+
+data_generator_params:
+    in_size: 15
+    out_size: 10
+    hidden_units: 16
+    batch_size: 1
+    noise: 0.0
+    task: "classification"
+    dataset_size: 1000
