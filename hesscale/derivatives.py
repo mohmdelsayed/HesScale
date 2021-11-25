@@ -33,7 +33,7 @@ FLATTEN = "flatten"
 
 class ConvDerivativesHesScale(ConvNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
-        if LOSS in mat:
+        if LOSS in mat or CONV in mat:
             return (
                 self.conv_matrix(module, mat[0].squeeze(0), sq=True).unsqueeze(0),
                 self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
@@ -47,12 +47,8 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
                 self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
                 CONV,
             )
-        elif CONV in mat or LINEAR in mat:
-            raise NotImplementedError(
-                "Consecetive Conv2d/Conv2d or Conv2d/Linear not supported"
-            )
         else:
-            raise NotImplementedError("Not supported conv")
+            raise NotImplementedError("Not supported layer")
 
     def conv_matrix(self, module, mat, sq=False):
         weight = module.weight ** 2 if sq else module.weight
@@ -82,7 +78,7 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
 
 class ConvTransposeDerivativesHesScale(ConvTransposeNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
-        if LOSS in mat:
+        if LOSS in mat or CONV in mat:
             return (
                 self.conv_matrix(module, mat[0].squeeze(0), sq=True).unsqueeze(0),
                 self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
@@ -95,10 +91,6 @@ class ConvTransposeDerivativesHesScale(ConvTransposeNDDerivatives):
                 ).unsqueeze(0),
                 self.conv_matrix(module, g_out[0], sq=False).unsqueeze(0),
                 CONV,
-            )
-        elif CONV in mat or LINEAR in mat:
-            raise NotImplementedError(
-                "Consecetive Conv2d/Conv2d or Conv2d/Linear not supported"
             )
         else:
             raise NotImplementedError("Not supported conv")
@@ -124,74 +116,140 @@ class ConvTransposeDerivativesHesScale(ConvTransposeNDDerivatives):
 
 class AvgPoolNDDerivativesHesScale(AvgPoolNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
-        if LOSS in mat:
+        if LOSS in mat or CONV in mat or LINEAR in mat:
             mat = mat[0]
         elif ACTIVATION in mat:
             mat = mat[0] + mat[1]
-        elif CONV in mat or LINEAR in mat:
-            raise NotImplementedError(
-                "Consecetive Pooling/Conv2d or Pooling/Linear not supported"
-            )
         else:
-            raise NotImplementedError("Not supported conv")
+            raise NotImplementedError("Not supported layer")
 
-        # self.check_exotic_parameters(module)
-        # mat_as_pool = self.__make_single_channel(mat÷, module)
-        jmp_as_pool = self.conv_matrix(module, mat)
-        # self.__check_jmp_out_as_pool(mat, jmp_as_pool, module)
+        self.check_exotic_parameters(module)
+        mat_as_pool = self.__make_single_channel(mat, module)
+        jmat_as_pool = self.__apply_jacobian_t_of(module, mat_as_pool)
+        self.__check_jmp_in_as_pool(mat, jmat_as_pool, module)
 
-        return self.reshape_like_output(jmp_as_pool, module)
+        gout_as_pool = self.__make_single_channel(g_out[0].unsqueeze(0), module)
+        jgout_as_pool = self.__apply_jacobian_t_of(module, gout_as_pool)
+        self.__check_jmp_in_as_pool(g_out[0].unsqueeze(0), jgout_as_pool, module)
+
+        return (
+            self.reshape_like_input(jmat_as_pool, module),
+            self.reshape_like_input(jgout_as_pool, module),
+            CONV,
+        )
+
     def __make_single_channel(self, mat, module):
         """Create fake single-channel images, grouping batch,
         class and channel dimension."""
         result = rearrange(mat, "v n c ... -> (v n c) ...")
         C_axis = 1
         return result.unsqueeze(C_axis)
-    
-    def __check_jmp_out_as_pool(self, mat, jmp_as_pool, module):
-        V = mat.size(0)
-        if self.N == 1:
-            N, C_out, L_out = module.output.shape
-            assert jmp_as_pool.shape == (V * N * C_out, 1, L_out)
-        elif self.N == 2:
-            N, C_out, H_out, W_out = module.output.shape
-            assert jmp_as_pool.shape == (V * N * C_out, 1, H_out, W_out)
-        elif self.N == 3:
-            N, C_out, D_out, H_out, W_out = module.output.shape
-            assert jmp_as_pool.shape == (V * N * C_out, 1, D_out, H_out, W_out)
 
-    def conv_matrix(self, module, mat):
-        convnd = self.conv(
-            in_channels=1,
-            out_channels=1,
+    def __apply_jacobian_t_of(self, module, mat):
+        C_for_conv_t = 1
+
+        convnd_t = self.convt(
+            in_channels=C_for_conv_t,
+            out_channels=C_for_conv_t,
             kernel_size=module.kernel_size,
             stride=module.stride,
             padding=module.padding,
             bias=False,
         ).to(module.input0.device)
 
-        convnd.weight.requires_grad = False
-        avg_kernel = torch.ones_like(convnd.weight) / (convnd.weight.numel() ** 2)
-        convnd.weight.data = avg_kernel
+        convnd_t.weight.requires_grad = False
+        avg_kernel = torch.ones_like(convnd_t.weight) / convnd_t.weight.numel()
+        convnd_t.weight.data = avg_kernel # should be _pow(2)
 
-        return convnd(mat)
+        V_N_C_in = mat.size(0)
+        if self.N == 1:
+            _, _, L_in = module.input0.size()
+            output_size = (V_N_C_in, C_for_conv_t, L_in)
+        elif self.N == 2:
+            _, _, H_in, W_in = module.input0.size()
+            output_size = (V_N_C_in, C_for_conv_t, H_in, W_in)
+        elif self.N == 3:
+            _, _, D_in, H_in, W_in = module.input0.size()
+            output_size = (V_N_C_in, C_for_conv_t, D_in, H_in, W_in)
+
+        return convnd_t(mat, output_size=output_size)
+
+    def __check_jmp_in_as_pool(self, mat, jmp_as_pool, module):
+        V = mat.size(0)
+        if self.N == 1:
+            N, C_in, L_in = module.input0.size()
+            assert jmp_as_pool.shape == (V * N * C_in, 1, L_in)
+        elif self.N == 2:
+            N, C_in, H_in, W_in = module.input0.size()
+            assert jmp_as_pool.shape == (V * N * C_in, 1, H_in, W_in)
+        elif self.N == 3:
+            N, C_in, D_in, H_in, W_in = module.input0.size()
+            assert jmp_as_pool.shape == (V * N * C_in, 1, D_in, H_in, W_in)
 
 
 class MaxPoolNDDerivativesHesScale(MaxPoolNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
-        if LOSS in mat:
+        if LOSS in mat or CONV in mat or LINEAR in mat:
             mat = mat[0]
         elif ACTIVATION in mat:
             mat = mat[0] + mat[1]
-        elif CONV in mat or LINEAR in mat:
-            raise NotImplementedError(
-                "Consecetive Pooling/Conv2d or Pooling/Linear not supported"
-            )
         else:
-            raise NotImplementedError("Not supported conv")
+            raise NotImplementedError("Not supported")
 
-        return self._jac_t_mat_prod(module, g_inp, g_out, mat)
+        mat_as_pool = rearrange(mat, "v n c ... -> v n c (...)")
+        jmat_as_pool = self.__apply_jacobian_t_of(module, mat_as_pool)
 
+        gout_as_pool = rearrange(g_out[0].unsqueeze(0), "v n c ... -> v n c (...)")
+        jgout_as_pool = self.__apply_jacobian_t_of(module, gout_as_pool)
+
+        return (
+            self.reshape_like_input(jmat_as_pool, module),
+            self.reshape_like_input(jgout_as_pool, module),
+            CONV,
+        )
+
+        mat_as_pool = rearrange(mat, "v n c ... -> v n c (...)")
+        jmp_as_pool = self.__apply_jacobian_t_of(module, mat_as_pool)
+        return self.reshape_like_input(jmp_as_pool, module)
+
+
+    def __pool_idx_for_jac(self, module, V):
+        """Manipulated pooling indices ready-to-use in jac(t)."""
+        pool_idx = self.get_pooling_idx(module)
+        pool_idx = rearrange(pool_idx, "n c ... -> n c (...)")
+
+        V_axis = 0
+
+        return pool_idx.unsqueeze(V_axis).expand(V, -1, -1, -1)
+    def __apply_jacobian_t_of(self, module, mat):
+        V = mat.shape[0]
+        result = self.__zero_for_jac_t(module, V, mat.device)
+        pool_idx = self.__pool_idx_for_jac(module, V)
+
+        N_axis = 3
+        result.scatter_add_(N_axis, pool_idx, mat)
+        return result
+
+    def __zero_for_jac_t(self, module, V, device):
+        if self.N == 1:
+            N, C_out, _ = module.output.shape
+            _, _, L_in = module.input0.size()
+
+            shape = (V, N, C_out, L_in)
+
+        elif self.N == 2:
+            N, C_out, _, _ = module.output.shape
+            _, _, H_in, W_in = module.input0.size()
+
+            shape = (V, N, C_out, H_in * W_in)
+
+        elif self.N == 3:
+            N, C_out, _, _, _ = module.output.shape
+            _, _, D_in, H_in, W_in = module.input0.size()
+
+            shape = (V, N, C_out, D_in * H_in * W_in)
+
+        return zeros(shape, device=device)
 
 class FlattenDerivativesHesScale(FlattenDerivatives):
     def __init__(self):
@@ -324,6 +382,10 @@ class BaseActivationDerivatives(ElementwiseDerivatives):
                 einsum(
                     equation, (g_out[0], self.d2f(module, g_inp, g_out).unsqueeze_(0))
                 ),
+                mat[1],
+                self.d2f(module, g_inp, g_out),
+                self.df(module, g_inp, g_out),
+                0,
                 ACTIVATION,
             )
         elif LINEAR in mat or CONV in mat:
