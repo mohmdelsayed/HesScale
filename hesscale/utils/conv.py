@@ -43,7 +43,7 @@ def separate_channels_and_pixels(module, tensor):
 
 
 def extract_weight_diagonal(module, backpropagated, sum_batch=True):
-    if LOSS in backpropagated:
+    if LOSS in backpropagated or LINEAR in backpropagated or CONV in backpropagated:
 
         unfolded_input = unfold_input(module, module.input0 ** 2)
 
@@ -80,7 +80,7 @@ def extract_weight_diagonal(module, backpropagated, sum_batch=True):
 
 def extract_bias_diagonal(module, backpropagated, sum_batch=True):
 
-    if LOSS in backpropagated:
+    if LOSS in backpropagated or LINEAR in backpropagated or CONV in backpropagated:
         start_spatial = 3
         sum_before = list(range(start_spatial, backpropagated[0].dim()))
         sum_after = [0, 1] if sum_batch else [0]
