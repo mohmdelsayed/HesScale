@@ -232,7 +232,7 @@ class LinearDerivativesHesScale(LinearDerivatives):
         if LOSS in mat:
             return (
                 einsum("oi,vno->vni", (module.weight.data ** 2, mat[0])),
-                einsum("nd,di->ni", (g_out[0], module.weight.data)).unsqueeze(0),
+                einsum("nd,di->...ni", (g_out[0], module.weight.data)),
                 LINEAR,
             )
         elif ACTIVATION in mat:
@@ -241,10 +241,10 @@ class LinearDerivativesHesScale(LinearDerivatives):
                 einsum("nd,di->...ni", (g_out[0], module.weight.data)),
                 LINEAR,
             )
-        elif LINEAR in mat: #TODO
+        elif LINEAR in mat:
             return (
                 einsum("oi,vno->vni", (module.weight.data ** 2, mat[0])),
-                einsum("nd,di->ni", (mat[1].squeeze(0), module.weight.data)).unsqueeze(0),
+                einsum("nd,di->...ni", (g_out[0], module.weight.data)),
                 LINEAR,
             )
         else:
