@@ -27,7 +27,6 @@ def execute_steps(func, initial_state, optimizer_class, optimizer_config, num_it
         f = func(x)
         with backpack(HesScale()):
             f.backward(create_graph=True)
-        torch.nn.utils.clip_grad_norm_(x, 1.0)
         optimizer.step()
         steps[:, i] = x.detach().numpy()
     return steps
@@ -141,13 +140,10 @@ def plot_rosenbrok(grad_iter, optimizer_name, lr):
 
 
 optimizers = [
-    # (torch.optim.Adam, -8, -0.5),
-    # (torch.optim.SGD, -8, -0.5),
-    (HesScaleOptimizer, -8.0, 1.0),
-    # (Adahessian, -8, 8),
-    # (ExactHessDiagOptimizer, -8.0, 0.0),
-    # (GGNExactOptimizer, -8.0, 0.0),
-    # (GGNMCOptimizer, -8.0, 0.0),
+    (torch.optim.Adam, -6, -0.1),
+    (torch.optim.SGD, -6, -0.5),
+    (HesScaleOptimizer,  -6.0, -0.1),
+    (Adahessian, -6, -0.0),
 ]
 # execute_experiments(
 #     optimizers,
@@ -166,5 +162,5 @@ execute_experiments(
     plot_func=plot_rosenbrok,
     initial_state=(-2.0, 2.0),
     seed=678986,
-    n_steps=200,
+    n_steps=300,
 )
