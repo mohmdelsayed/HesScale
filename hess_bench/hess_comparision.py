@@ -21,43 +21,43 @@ class HessComp(nn.Module):
 
         super(HessComp, self).__init__()
 
-        self.model = torch.nn.Sequential(
-            torch.nn.Conv2d(1, 1, kernel_size=2),
-            torch.nn.Tanh(),
-            torch.nn.MaxPool2d(kernel_size=2),
-            
-            torch.nn.Conv2d(1, 1, kernel_size=2),
-            torch.nn.Tanh(),
-            
-            torch.nn.Conv2d(1, 1, kernel_size=2),
-            torch.nn.Tanh(),
-            torch.nn.MaxPool2d(kernel_size=2),
-            torch.nn.MaxPool2d(kernel_size=2),
-            
-            torch.nn.Flatten(),
-            torch.nn.Linear(1, 10),
-        )
         # self.model = torch.nn.Sequential(
-        #     torch.nn.Linear(n_obs, hidden_units),
+        #     torch.nn.Conv2d(1, 1, kernel_size=2),
         #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
+        #     torch.nn.MaxPool2d(kernel_size=2),
+            
+        #     torch.nn.Conv2d(1, 1, kernel_size=2),
         #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
+            
+        #     torch.nn.Conv2d(1, 1, kernel_size=2),
         #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
-        #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
-        #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
-        #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
-        #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
-        #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, hidden_units),
-        #     torch.nn.Tanh(),
-        #     torch.nn.Linear(hidden_units, n_classes),
+        #     torch.nn.MaxPool2d(kernel_size=2),
+        #     torch.nn.MaxPool2d(kernel_size=2),
+            
+        #     torch.nn.Flatten(),
+        #     torch.nn.Linear(1, 10),
         # )
+        self.model = torch.nn.Sequential(
+            torch.nn.Linear(n_obs, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, hidden_units),
+            torch.nn.ReLU(),
+            torch.nn.Linear(hidden_units, n_classes),
+        )
 
         self.model_softmax = nn.Sequential(
             copy.deepcopy(self.model), torch.nn.LogSoftmax(dim=1)

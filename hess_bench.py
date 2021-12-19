@@ -14,7 +14,7 @@ from hess_bench.utils import unpack
 
 warnings.filterwarnings("ignore")
 
-n_plots = 4
+n_plots = 10
 @unpack
 def run(configs, seed, lamda):
     experiment = HessExperimentComparision(configs, seed)

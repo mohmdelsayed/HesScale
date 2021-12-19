@@ -62,8 +62,8 @@ class TargetGenerator:
             target = self.target(example).detach().numpy() + noise * self.target_noise
             labels = np.argmax(target, axis=1)
 
-            example = np.random.randn(dataset_size, 1, self.info[0], self.info[0])
-            # example = np.random.randn(dataset_size, self.info[0])
+            # example = np.random.randn(dataset_size, 1, self.info[0], self.info[0])
+            example = np.random.randn(dataset_size, self.info[0])
 
             return example, labels
         else:
