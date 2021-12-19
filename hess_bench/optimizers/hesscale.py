@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 class HesScaleOptimizer(Optimizer):
     method = HesScale()
 
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-4):
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -43,23 +43,41 @@ class HesScaleOptimizer(Optimizer):
 
                 state["step"] += 1
                 hess_param = getattr(p, group["method_field"]).detach()
-                torch.max(hess_param, torch.tensor([0.0]), out=hess_param)
-                # assert (hess_param >= 0.0).all(), "Negative Hessian Values"
 
+                style = "no_grad_h"
                 # Decay the first and second moment running average coefficient
                 exp_avg.mul_(beta1).add_(p.grad.detach_(), alpha=1 - beta1)
-                exp_hessian_diag.mul_(beta2).add_(hess_param, alpha=1 - beta2)
+                
+                if style == "adahess":
+                    exp_hessian_diag.mul_(beta2).addcmul_(hess_param, hess_param, value=1 - beta2)
+                elif style == "max":
+                    torch.max(hess_param, torch.tensor([0.0]), out=hess_param)
+                    exp_hessian_diag.mul_(beta2).add_(hess_param, alpha=1 - beta2)
+                elif style == "no_h_update":
+                    old_estimate = exp_hessian_diag.clone()
+                    exp_hessian_diag.mul_(beta2).add_(hess_param, alpha=1 - beta2)
+                    exp_hessian_diag[hess_param<0.0] = old_estimate[hess_param<0.0]
+                elif style == "no_grad_h":
+                    torch.max(hess_param, torch.tensor([0.0]), out=hess_param)
+                    exp_hessian_diag.mul_(beta2).add_(hess_param, alpha=1 - beta2)
 
                 bias_correction1 = 1 - beta1 ** state["step"]
                 bias_correction2 = 1 - beta2 ** state["step"]
 
-                denom = exp_hessian_diag.add_(group["eps"])
+                if style == "adahess":
+                    denom = (
+                        (exp_hessian_diag.sqrt()) /
+                        math.sqrt(bias_correction2)).add_(
+                        group['eps'])
+                else:
+                    denom = exp_hessian_diag.add_(group["eps"])
 
-                # step_size = bias_correction2 * group["lr"] / bias_correction1
-                step_size = group["lr"]
+                if style == "adahess":
+                    step_size =  group["lr"] / bias_correction1
+                else:
+                    step_size = bias_correction2 * group["lr"] / bias_correction1
                 
-                p.data.addcdiv_(exp_avg, denom, value=-step_size)
-
-                # hess_param = getattr(p, group['method_field']).detach_()
-                # torch.max(hess_param, torch.tensor([0.]), out=hess_param)
-                # p.data.addcdiv_(p.grad.detach_(), hess_param.add_(group['eps']), value=-group['lr'])
+                if style == "no_grad_h":
+                    p.data.addcdiv_(exp_avg * (hess_param>0.0) , denom, value=-step_size)
+                else:
+                    p.data.addcdiv_(exp_avg, denom, value=-step_size)
