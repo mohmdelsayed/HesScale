@@ -11,7 +11,7 @@ from torch.optim import Optimizer
 class GGNMCOptimizer(Optimizer):
     method = DiagGGNMC()
 
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-4):
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -56,11 +56,7 @@ class GGNMCOptimizer(Optimizer):
 
                 denom = exp_hessian_diag.add_(group["eps"])
 
-                # step_size = bias_correction2 * group["lr"] / bias_correction1
-                step_size = group["lr"]
+                step_size = bias_correction2 * group["lr"] / bias_correction1
 
                 p.data.addcdiv_(exp_avg, denom, value=-step_size)
-
-                # hess_param = getattr(p, group['method_field']).detach_()
-                # torch.max(hess_param, torch.tensor([0.]), out=hess_param)
-                # p.data.addcdiv_(p.grad.detach_(), hess_param.add_(group['eps']), value=-0.0*group['lr'])
+                

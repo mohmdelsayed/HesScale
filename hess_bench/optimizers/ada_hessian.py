@@ -20,7 +20,7 @@ class Adahessian(Optimizer):
         single_gpu (Bool, optional): Do you use distributed training or not "torch.nn.parallel.DistributedDataParallel" (default: True)
     """
 
-    def __init__(self, params, lr=0.15, betas=(0.9, 0.999), eps=1e-4,
+    def __init__(self, params, lr=0.15, betas=(0.9, 0.999), eps=1e-8,
                  weight_decay=0, hessian_power=1, single_gpu=True):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
