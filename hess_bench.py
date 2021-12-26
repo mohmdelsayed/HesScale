@@ -14,7 +14,7 @@ from hess_bench.utils import unpack
 
 warnings.filterwarnings("ignore")
 
-n_plots = 10
+n_plots = 4
 @unpack
 def run(configs, seed, lamda):
     experiment = HessExperimentComparision(configs, seed)
@@ -25,9 +25,7 @@ def run(configs, seed, lamda):
 def main():
     configs_dir = "hess_bench/configs_"
 
-    data = {}
     data_lamda1 = {}
-
     for configs in os.listdir(configs_dir):
         with open(f"{configs_dir}/{configs}") as file:
             configs = yaml.full_load(file)
@@ -36,9 +34,9 @@ def main():
         randomlist = random.sample(range(0, 99999), configs["n_seeds"])
         exp_name = configs["exp_name"]
 
-        means = []
-        lamda_range = [1.0]  # list(np.arange(0, 20) * 0.125 - 0.5) + [1.0]
+        lamda_range = [1.0] #list(np.arange(-4, 6) * 0.125 + 0.5)
         for lamda in lamda_range:
+            data = {}
             pool = Pool(configs["n_processes"])
             results = pool.map(run, [(configs, seed, lamda) for seed in randomlist])
             pool.close()
@@ -51,36 +49,18 @@ def main():
                     for name in result[method]:
                         sums += result[method][name]
 
-                    if lamda == 1.0:
-                        if method in data_lamda1:
-                            data_lamda1[method].append(sums)
-                        else:
-                            data_lamda1[method] = [sums]
+                    if method in data:
+                        data[method].append(sums)
                     else:
-                        if method in data:
-                            data[method].append(sums)
-                        else:
-                            data[method] = [sums]
+                        data[method] = [sums]
 
-            cats = []
-            bar_means = []
-            bar_stds = []
+            cats, bar_means, bar_stds = [], [], []
             for element in data:
                 bar_means.append(np.asarray(data[element]).mean(axis=1).mean(axis=0))
-                bar_stds.append(np.asarray(data[element]).std())
+                bar_stds.append(np.asarray(data[element]).mean(axis=0).std())
                 cats.append(element)
             if lamda == 1.0:
-                cats = []
-                bar_means = []
-                bar_stds = []
-
-                for element in data_lamda1:
-                    bar_means.append(
-                        np.asarray(data_lamda1[element]).mean(axis=1).mean(axis=0)
-                    )
-                    bar_stds.append(np.asarray(data_lamda1[element]).std())
-                    cats.append(element)
-
+                data_lamda1 = data.copy()
                 plt.bar(
                     cats,
                     bar_means,
@@ -92,30 +72,28 @@ def main():
                         )
                         * 2
                     ),
+                    color="gray",
                 )
-                plt.title(
-                    "Quality of Diagonal Hessian Approximations in {}".format(
-                        configs["env_name"]
-                    )
+            plt.title(
+                "Quality of Diagonal Hessian Approximations in {}".format(
+                    configs["env_name"]
                 )
-                plt.yscale('log')
-                plt.ylabel("L1 Error")
+            )
+            plt.yscale('log')
+            plt.ylabel("L1 Error")
 
-            means.append(bar_means)
-
-        #     plt.plot(
-        #         cats,
-        #         bar_means,
-        #         linewidth=0.8,
-        #     )
-
-        # plt.legend(["λ = {}".format(lamda_i) for lamda_i in lamda_range])
+            plt.plot(
+                cats,
+                bar_means,
+                linewidth=0.8,
+            )
+        plt.legend(["λ = {}".format(lamda_i) for lamda_i in lamda_range])
         plt.show()
 
-        # relationship with depth:
+        # Figure 2:
         nums = {}
         for i, result in enumerate(results):
-            for method in result:
+            for method in data_lamda1:
                 if not method in nums:
                     nums[method] = np.zeros((len(results), n_plots))
                 hess_list = []
@@ -135,8 +113,6 @@ def main():
         for method in nums:
             plt.plot(range(1,n_plots+1), nums[method].mean(axis=0))
             plt.yscale('log')
-            
-
         plt.legend([method for method in nums])
         plt.title("Quality with number of layers")
         plt.ylabel("L1 Error")
@@ -144,7 +120,11 @@ def main():
         plt.xlim(left=0.0, right=n_plots+1)
         plt.ylim(bottom=0.0)
         plt.show()
-        # Plot 3:
+        
+        
+
+
+        # Figure 3:
         w = 0.8  # bar width
         colors = [XKCD_COLORS[key] for key in XKCD_COLORS]
         x = range(len(cats))  # x-coordinates of your bars
