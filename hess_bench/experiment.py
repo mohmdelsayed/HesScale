@@ -43,15 +43,12 @@ class HessExperimentComparision:
 
         inputs, labels = self.data_generator.get_dataset(dataset_size=self.dataset_size)
 
-        avg_exact_hessian, avg_exact_grad = self.predictor.avg_exact_hess(
-            inputs, labels
-        )
         avgs_lists = {}
 
         for (inp, label) in iterate_minibatches(inputs, labels, batchsize=50):
 
             sample_error_methods = self.predictor.compare_hess_methods(
-                inp, label, avg_exact_hessian, avg_exact_grad, lamda=lamda
+                inp, label, lamda=lamda
             )
 
             for method in sample_error_methods:
@@ -59,7 +56,6 @@ class HessExperimentComparision:
                     avgs_lists[method] = {}
                 for name in sample_error_methods[method]:
                     if not name in avgs_lists[method]:
-                        sums = 0
                         avgs_lists[method][name] = []
 
                     avgs_lists[method][name].append(sample_error_methods[method][name])
