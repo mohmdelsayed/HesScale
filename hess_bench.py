@@ -34,7 +34,7 @@ def main():
         randomlist = random.sample(range(0, 99999), configs["n_seeds"])
         exp_name = configs["exp_name"]
 
-        lamda_range = [1.0] #list(np.arange(-4, 6) * 0.125 + 0.5)
+        lamda_range = list(np.arange(-4, 6) * 0.125 + 0.5)
         for lamda in lamda_range:
             data = {}
             pool = Pool(configs["n_processes"])
