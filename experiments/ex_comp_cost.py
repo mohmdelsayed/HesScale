@@ -7,14 +7,14 @@ from backpack import backpack, extend
 from backpack.extensions import DiagGGNExact, DiagGGNMC, DiagHessian, KFAC
 from torch import nn
 
-from experiments.approximation_quality.optimizers.ada_hessian import Adahessian
-from experiments.approximation_quality.optimizers.exact_diag_hess import (
+from experiments.computational_cost.optimizers.ada_hessian import Adahessian
+from experiments.computational_cost.optimizers.exact_diag_hess import (
     ExactHessDiagOptimizer,
 )
-from experiments.approximation_quality.optimizers.ggn import GGNExactOptimizer
-from experiments.approximation_quality.optimizers.ggn_mc import GGNMCOptimizer
-from experiments.approximation_quality.optimizers.hesscale import HesScaleOptimizer
-from experiments.approximation_quality.optimizers.kfac import KFACOptimizer
+from experiments.computational_cost.optimizers.ggn import GGNExactOptimizer
+from experiments.computational_cost.optimizers.ggn_mc import GGNMCOptimizer
+from experiments.computational_cost.optimizers.hesscale import HesScaleOptimizer
+from experiments.computational_cost.optimizers.kfac import KFACOptimizer
 
 
 def main():
