@@ -3,7 +3,7 @@ exp_name: "comp-hessian"
 env_name: "Classification"
 
 lr: 0.0004  # learning rate (support multiple lrs in a list)
-n_seeds: 40                 # number of seeds in the experiment
+n_seeds: 4                 # number of seeds in the experiment
 n_processes: 8
 
 predictor_params: 
@@ -16,4 +16,4 @@ data_generator_params:
     batch_size: 1
     noise: 0.0
     task: "classification"
-    dataset_size: 1000
+    dataset_size: 100

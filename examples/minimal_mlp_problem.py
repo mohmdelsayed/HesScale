@@ -12,8 +12,6 @@ batch_size = 1
 model = torch.nn.Sequential(
     torch.nn.Linear(n_obs, hidden_units),
     torch.nn.Sigmoid(),
-    torch.nn.Linear(hidden_units, hidden_units),
-    torch.nn.Tanh(),
     torch.nn.Linear(hidden_units, n_classes),
 )
 loss_func = torch.nn.CrossEntropyLoss()
@@ -25,15 +23,21 @@ extend(loss_func)
 for i in range(T):
     inputs = torch.randn((batch_size, n_obs))
     target_class = torch.randint(0, n_classes, (batch_size,))
+    
+    intermediate_variable = model[:2](inputs)
+    intermediate_variable.retain_grad()
+    
+    prediction = model[-1](intermediate_variable)
 
-    prediction = model(inputs)
-    optimizer.zero_grad()
     loss = loss_func(prediction, target_class)
 
-    with backpack(HesScale()):
+    optimizer.zero_grad()
+    with backpack(HesScale(savefield="hesscale")):
         loss.backward()
 
     optimizer.step()
 
+    # this is wrongs?
+    print(intermediate_variable.hesscale_.shape)
     for (name, param) in model.named_parameters():
         print(name, param.hesscale.shape)

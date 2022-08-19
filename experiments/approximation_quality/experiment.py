@@ -5,8 +5,8 @@ import time
 import numpy as np
 import torch
 
-from hess_bench.data_generator import TargetGenerator
-from hess_bench.hess_comparision import HessComp
+from experiments.approximation_quality.data_generator import TargetGenerator
+from experiments.approximation_quality.hess_comparision import HessComp
 
 
 class HessExperimentComparision:

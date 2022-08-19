@@ -10,11 +10,11 @@ from backpack import backpack, extend
 from backpack.extensions import DiagHessian, DiagGGNExact, DiagGGNMC
 
 from hesscale import HesScale
-from hess_bench.optimizers.hesscale import HesScaleOptimizer
-from hess_bench.optimizers.ggn import GGNExactOptimizer
-from hess_bench.optimizers.ggn_mc import GGNMCOptimizer
-from hess_bench.optimizers.exact_diag_hess import ExactHessDiagOptimizer
-from hess_bench.optimizers.ada_hessian import Adahessian
+from experiments.approximation_quality.optimizers.hesscale import HesScaleOptimizer
+from experiments.approximation_quality.optimizers.ggn import GGNExactOptimizer
+from experiments.approximation_quality.optimizers.ggn_mc import GGNMCOptimizer
+from experiments.approximation_quality.optimizers.exact_diag_hess import ExactHessDiagOptimizer
+from experiments.approximation_quality.optimizers.ada_hessian import Adahessian
 
 def execute_steps(func, initial_state, optimizer_class, optimizer_config, num_iter=500):
     x = torch.Tensor(initial_state).requires_grad_(True)
@@ -109,7 +109,7 @@ def plot_rastrigin(grad_iter, optimizer_name, lr):
     )
     plt.plot(*minimum, "gD")
     plt.plot(iter_x[-1], iter_y[-1], "rD")
-    plt.savefig("optim_landscape/rastrigin_{}.png".format(optimizer_name))
+    plt.savefig("rastrigin_{}.png".format(optimizer_name))
     # plt.show()
 
 
@@ -135,7 +135,7 @@ def plot_rosenbrok(grad_iter, optimizer_name, lr):
     )
     plt.plot(*minimum, "gD")
     plt.plot(iter_x[-1], iter_y[-1], "rD")
-    plt.savefig("optim_landscape/rosenbrock_{}.png".format(optimizer_name))
+    plt.savefig("rosenbrock_{}.png".format(optimizer_name))
     # plt.show()
 
 
@@ -162,5 +162,5 @@ execute_experiments(
     plot_func=plot_rosenbrok,
     initial_state=(-2.0, 2.0),
     seed=678986,
-    n_steps=300,
+    n_steps=100,
 )

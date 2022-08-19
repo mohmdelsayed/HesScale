@@ -8,10 +8,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yaml
 
-from _color_data import TABLEAU_COLORS, XKCD_COLORS
-from hess_bench.experiment import HessExperimentComparision
-from hess_bench.utils import unpack
+from utils import TABLEAU_COLORS, XKCD_COLORS
+from experiments.approximation_quality.experiment import HessExperimentComparision
+from experiments.approximation_quality.utils import unpack
 
+
+matplotlib.rcParams["axes.spines.right"] = False
+matplotlib.rcParams["axes.spines.top"] = False
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 warnings.filterwarnings("ignore")
 
 n_plots = 4
@@ -23,8 +28,8 @@ def run(configs, seed, lamda):
 
 
 def main():
-    configs_dir = "hess_bench/configs_"
 
+    configs_dir = "experiments/approximation_quality/configs_"
     data_lamda1 = {}
     for configs in os.listdir(configs_dir):
         with open(f"{configs_dir}/{configs}") as file:
@@ -34,7 +39,7 @@ def main():
         randomlist = random.sample(range(0, 99999), configs["n_seeds"])
         exp_name = configs["exp_name"]
 
-        lamda_range = list(np.arange(-4, 6) * 0.125 + 0.5)
+        lamda_range = [1.0] # list(np.arange(-4, 6) * 0.125 + 0.5)
         for lamda in lamda_range:
             data = {}
             pool = Pool(configs["n_processes"])
@@ -74,21 +79,22 @@ def main():
                     ),
                     color="gray",
                 )
-            plt.title(
-                "Quality of Diagonal Hessian Approximations in {}".format(
-                    configs["env_name"]
-                )
-            )
+            # plt.title(
+            #     "Quality of Diagonal Hessian Approximations in {}".format(
+            #         configs["env_name"]
+            #     )
+            # )
             plt.yscale('log')
             plt.ylabel("L1 Error")
 
-            plt.plot(
-                cats,
-                bar_means,
-                linewidth=0.8,
-            )
-        plt.legend(["λ = {}".format(lamda_i) for lamda_i in lamda_range])
-        plt.show()
+            # plt.plot(
+            #     cats,
+            #     bar_means,
+            #     linewidth=0.8,
+            # )
+        # plt.legend(["λ = {}".format(lamda_i) for lamda_i in lamda_range])
+        plt.savefig("plot1.pdf")
+        plt.clf()
 
         # Figure 2:
         nums = {}
@@ -109,20 +115,19 @@ def main():
 
                 nums[method][i, :] = np.asarray(hess_list)
 
-        # del nums["|H|"]
         for method in nums:
             plt.plot(range(1,n_plots+1), nums[method].mean(axis=0))
-            plt.yscale('log')
+            plt.yscale('symlog', linthreshy=1e-1)
         plt.legend([method for method in nums])
-        plt.title("Quality with number of layers")
+        # plt.title("Quality with number of layers")
+        plt.xticks(range(1,n_plots+1))
         plt.ylabel("L1 Error")
         plt.xlabel("Layer Number")
-        plt.xlim(left=0.0, right=n_plots+1)
         plt.ylim(bottom=0.0)
-        plt.show()
+        plt.savefig("plot2.pdf")
+        plt.clf()
         
-        
-
+    
 
         # Figure 3:
         w = 0.8  # bar width
@@ -168,7 +173,8 @@ def main():
         plt.xticks(x, cats)
         plt.axhline(y=1.0, color="r", alpha=0.2, linestyle="-", zorder=-12)
         plt.ylabel("Normalized L1 error")
-        plt.show()
+        plt.savefig("plot3.pdf")
+        plt.clf()
 
 
 if __name__ == "__main__":
