@@ -10,7 +10,7 @@ python3.7 -m venv .hesscale
 source .hesscale/bin/activate
 ```
 #### 2. Install Dependencies:
-```
+```sh
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 pip install .
@@ -18,7 +18,7 @@ pip install .
 
 ## Run a minimal example:
 We added a couple of minimal examples in the `examples` directory for easier understanding of how to use this package. Here is a minimal example:
-```
+```python
 #!/usr/bin/env python3
 import torch
 from hesscale import HesScale
