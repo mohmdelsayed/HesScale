@@ -20,25 +20,34 @@ class Adahessian(Optimizer):
         single_gpu (Bool, optional): Do you use distributed training or not "torch.nn.parallel.DistributedDataParallel" (default: True)
     """
 
-    def __init__(self, params, lr=0.15, betas=(0.9, 0.999), eps=1e-8,
-                 weight_decay=0, hessian_power=1, single_gpu=True):
+    def __init__(
+        self,
+        params,
+        lr=0.15,
+        betas=(0.9, 0.999),
+        eps=1e-8,
+        weight_decay=0,
+        hessian_power=1,
+        single_gpu=True,
+    ):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
             raise ValueError("Invalid epsilon value: {}".format(eps))
         if not 0.0 <= betas[0] < 1.0:
-            raise ValueError(
-                "Invalid beta parameter at index 0: {}".format(
-                    betas[0]))
+            raise ValueError("Invalid beta parameter at index 0: {}".format(betas[0]))
         if not 0.0 <= betas[1] < 1.0:
-            raise ValueError(
-                "Invalid beta parameter at index 1: {}".format(
-                    betas[1]))
+            raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         if not 0.0 <= hessian_power <= 1.0:
             raise ValueError("Invalid Hessian power value: {}".format(hessian_power))
-        defaults = dict(lr=lr, betas=betas, eps=eps,
-                        weight_decay=weight_decay, hessian_power=hessian_power)
-        self.single_gpu = single_gpu 
+        defaults = dict(
+            lr=lr,
+            betas=betas,
+            eps=eps,
+            weight_decay=weight_decay,
+            hessian_power=hessian_power,
+        )
+        self.single_gpu = single_gpu
         super(Adahessian, self).__init__(params, defaults)
 
     def get_trace(self, params, grads):
@@ -52,28 +61,29 @@ class Adahessian(Optimizer):
         # Check backward was called with create_graph set to True
         for i, grad in enumerate(grads):
             if grad.grad_fn is None:
-                raise RuntimeError('Gradient tensor {:} does not have grad_fn. When calling\n'.format(i) +
-                           '\t\t\t  loss.backward(), make sure the option create_graph is\n' +
-                           '\t\t\t  set to True.')
+                raise RuntimeError(
+                    "Gradient tensor {:} does not have grad_fn. When calling\n".format(
+                        i
+                    )
+                    + "\t\t\t  loss.backward(), make sure the option create_graph is\n"
+                    + "\t\t\t  set to True."
+                )
 
         v = [2 * torch.randint_like(p, high=2) - 1 for p in params]
 
-        # this is for distributed setting with single node and multi-gpus, 
+        # this is for distributed setting with single node and multi-gpus,
         # for multi nodes setting, we have not support it yet.
         if not self.single_gpu:
             for v1 in v:
                 dist.all_reduce(v1)
         if not self.single_gpu:
             for v_i in v:
-                v_i[v_i < 0.] = -1.
-                v_i[v_i >= 0.] = 1.
+                v_i[v_i < 0.0] = -1.0
+                v_i[v_i >= 0.0] = 1.0
 
         hvs = torch.autograd.grad(
-            grads,
-            params,
-            grad_outputs=v,
-            only_inputs=True,
-            retain_graph=True)
+            grads, params, grad_outputs=v, only_inputs=True, retain_graph=True
+        )
 
         hutchinson_trace = []
         for hv in hvs:
@@ -89,12 +99,12 @@ class Adahessian(Optimizer):
                 tmp_output = torch.mean(hv.abs(), dim=[2, 3], keepdim=True)
             hutchinson_trace.append(tmp_output)
 
-        # this is for distributed setting with single node and multi-gpus, 
+        # this is for distributed setting with single node and multi-gpus,
         # for multi nodes setting, we have not support it yet.
         if not self.single_gpu:
             for output1 in hutchinson_trace:
                 dist.all_reduce(output1 / torch.cuda.device_count())
-        
+
         return hutchinson_trace
 
     def step(self, closure=None):
@@ -114,9 +124,9 @@ class Adahessian(Optimizer):
 
         # Flatten groups into lists, so that
         #  hut_traces can be called with lists of parameters
-        #  and grads 
+        #  and grads
         for group in self.param_groups:
-            for p in group['params']:
+            for p in group["params"]:
                 if p.grad is not None:
                     params.append(p)
                     groups.append(group)
@@ -132,34 +142,39 @@ class Adahessian(Optimizer):
 
             # State initialization
             if len(state) == 0:
-                state['step'] = 0
+                state["step"] = 0
                 # Exponential moving average of gradient values
-                state['exp_avg'] = torch.zeros_like(p.data)
+                state["exp_avg"] = torch.zeros_like(p.data)
                 # Exponential moving average of Hessian diagonal square values
-                state['exp_hessian_diag_sq'] = torch.zeros_like(p.data)
+                state["exp_hessian_diag_sq"] = torch.zeros_like(p.data)
 
-            exp_avg, exp_hessian_diag_sq = state['exp_avg'], state['exp_hessian_diag_sq']
+            exp_avg, exp_hessian_diag_sq = (
+                state["exp_avg"],
+                state["exp_hessian_diag_sq"],
+            )
 
-            beta1, beta2 = group['betas']
+            beta1, beta2 = group["betas"]
 
-            state['step'] += 1
+            state["step"] += 1
 
             # Decay the first and second moment running average coefficient
             exp_avg.mul_(beta1).add_(grad.detach_(), alpha=1 - beta1)
-            exp_hessian_diag_sq.mul_(beta2).addcmul_(hut_trace, hut_trace, value=1 - beta2)
+            exp_hessian_diag_sq.mul_(beta2).addcmul_(
+                hut_trace, hut_trace, value=1 - beta2
+            )
 
-            bias_correction1 = 1 - beta1 ** state['step']
-            bias_correction2 = 1 - beta2 ** state['step']
+            bias_correction1 = 1 - beta1 ** state["step"]
+            bias_correction2 = 1 - beta2 ** state["step"]
 
             # make the square root, and the Hessian power
-            k = group['hessian_power']
+            k = group["hessian_power"]
             denom = (
-                (exp_hessian_diag_sq.sqrt() ** k) /
-                math.sqrt(bias_correction2) ** k).add_(
-                group['eps'])
+                (exp_hessian_diag_sq.sqrt() ** k) / math.sqrt(bias_correction2) ** k
+            ).add_(group["eps"])
 
             # make update
-            p.data = p.data - \
-                group['lr'] * (exp_avg / bias_correction1 / denom + group['weight_decay'] * p.data)
+            p.data = p.data - group["lr"] * (
+                exp_avg / bias_correction1 / denom + group["weight_decay"] * p.data
+            )
 
         return loss

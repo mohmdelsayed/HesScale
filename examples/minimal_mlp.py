@@ -41,5 +41,5 @@ def example():
             print(name, param.hesscale.shape)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     example()

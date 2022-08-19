@@ -15,11 +15,13 @@ from experiments.approximation_quality.utils import unpack
 
 matplotlib.rcParams["axes.spines.right"] = False
 matplotlib.rcParams["axes.spines.top"] = False
-matplotlib.rcParams['pdf.fonttype'] = 42
-matplotlib.rcParams['ps.fonttype'] = 42
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
 warnings.filterwarnings("ignore")
 
 n_plots = 4
+
+
 @unpack
 def run(configs, seed, lamda):
     experiment = HessExperimentComparision(configs, seed)
@@ -39,7 +41,7 @@ def main():
         randomlist = random.sample(range(0, 99999), configs["n_seeds"])
         exp_name = configs["exp_name"]
 
-        lamda_range = [1.0] # list(np.arange(-4, 6) * 0.125 + 0.5)
+        lamda_range = [1.0]  # list(np.arange(-4, 6) * 0.125 + 0.5)
         for lamda in lamda_range:
             data = {}
             pool = Pool(configs["n_processes"])
@@ -84,7 +86,7 @@ def main():
             #         configs["env_name"]
             #     )
             # )
-            plt.yscale('log')
+            plt.yscale("log")
             plt.ylabel("L1 Error")
 
             # plt.plot(
@@ -116,18 +118,16 @@ def main():
                 nums[method][i, :] = np.asarray(hess_list)
 
         for method in nums:
-            plt.plot(range(1,n_plots+1), nums[method].mean(axis=0))
-            plt.yscale('symlog', linthreshy=1e-1)
+            plt.plot(range(1, n_plots + 1), nums[method].mean(axis=0))
+            plt.yscale("symlog", linthreshy=1e-1)
         plt.legend([method for method in nums])
         # plt.title("Quality with number of layers")
-        plt.xticks(range(1,n_plots+1))
+        plt.xticks(range(1, n_plots + 1))
         plt.ylabel("L1 Error")
         plt.xlabel("Layer Number")
         plt.ylim(bottom=0.0)
         plt.savefig("plot2.pdf")
         plt.clf()
-        
-    
 
         # Figure 3:
         w = 0.8  # bar width

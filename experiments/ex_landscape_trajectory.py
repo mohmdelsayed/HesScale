@@ -13,8 +13,11 @@ from hesscale import HesScale
 from experiments.approximation_quality.optimizers.hesscale import HesScaleOptimizer
 from experiments.approximation_quality.optimizers.ggn import GGNExactOptimizer
 from experiments.approximation_quality.optimizers.ggn_mc import GGNMCOptimizer
-from experiments.approximation_quality.optimizers.exact_diag_hess import ExactHessDiagOptimizer
+from experiments.approximation_quality.optimizers.exact_diag_hess import (
+    ExactHessDiagOptimizer,
+)
 from experiments.approximation_quality.optimizers.ada_hessian import Adahessian
+
 
 def execute_steps(func, initial_state, optimizer_class, optimizer_config, num_iter=500):
     x = torch.Tensor(initial_state).requires_grad_(True)
@@ -40,9 +43,13 @@ def objective_rastrigin(n_steps=100):
         minimum = (0, 0)
         optimizer_config = dict(lr=lr)
         steps = execute_steps(
-            extend(RastriginLoss()), initial_state, optimizer_class, optimizer_config, n_steps
+            extend(RastriginLoss()),
+            initial_state,
+            optimizer_class,
+            optimizer_config,
+            n_steps,
         )
-        return ((steps[0][-1] - minimum[0]) ** 2 + (steps[1][-1] - minimum[1]) ** 2)
+        return (steps[0][-1] - minimum[0]) ** 2 + (steps[1][-1] - minimum[1]) ** 2
 
     return objective_rastrigin_
 
@@ -55,9 +62,13 @@ def objective_rosenbrok(n_steps=100):
         initial_state = (-2.0, 2.0)
         optimizer_config = dict(lr=lr)
         steps = execute_steps(
-            extend(RosenbrockLoss()), initial_state, optimizer_class, optimizer_config, n_steps
+            extend(RosenbrockLoss()),
+            initial_state,
+            optimizer_class,
+            optimizer_config,
+            n_steps,
         )
-        return ((steps[0][-1] - minimum[0]) ** 2 + (steps[1][-1] - minimum[1]) ** 2)
+        return (steps[0][-1] - minimum[0]) ** 2 + (steps[1][-1] - minimum[1]) ** 2
 
     return objective_rosenbrok_
 
@@ -78,7 +89,7 @@ def execute_experiments(
             max_evals=200,
             rstate=np.random.RandomState(seed),
         )
-        print(best['lr'], optimizer_class)
+        print(best["lr"], optimizer_class)
         steps = execute_steps(
             func,
             initial_state,
@@ -142,7 +153,7 @@ def plot_rosenbrok(grad_iter, optimizer_name, lr):
 optimizers = [
     (torch.optim.Adam, -6, -0.1),
     (torch.optim.SGD, -6, -0.5),
-    (HesScaleOptimizer,  -6.0, -0.1),
+    (HesScaleOptimizer, -6.0, -0.1),
     (Adahessian, -6, -0.0),
 ]
 # execute_experiments(

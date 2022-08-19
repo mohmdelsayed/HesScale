@@ -82,7 +82,7 @@ class AddGaussianNoise:
 class InfiniteMNIST:
     """
     Iteratable Infinite MNIST dataset for online learning
-    
+
     Each sample is transformed and flattened.
     """
 
@@ -137,11 +137,10 @@ class InfiniteMNIST:
         return tensor + torch.randn(tensor.size()) * self.noise_std + self.noise_mean
 
 
-
 class OfflineMNIST:
     """
     Iteratable Offline MNIST dataset for online learning
-    
+
     Each sample is transformed and flattened.
     """
 
@@ -168,9 +167,8 @@ class OfflineMNIST:
             download=True,
             transform=torchvision.transforms.Compose(
                 [
-                torchvision.transforms.ToTensor(),
-                torchvision.transforms.Normalize(
-                    (0.1307,), (0.3081,))
+                    torchvision.transforms.ToTensor(),
+                    torchvision.transforms.Normalize((0.1307,), (0.3081,)),
                 ]
             ),
         )
@@ -183,7 +181,6 @@ class OfflineMNIST:
 
     def add_noise(self, tensor):
         return tensor + torch.randn(tensor.size()) * self.noise_std + self.noise_mean
-
 
 
 class TargetNetClassification(nn.Module):

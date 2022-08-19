@@ -11,6 +11,7 @@ def flatten(list_of_lists):
 def inner_product(xs, ys):
     return sum([torch_sum(x * y) for x, y in zip(xs, ys)])
 
+
 def matrix_from_kron_facs(factors):
     assert all_tensors_of_order(order=2, tensors=factors)
     mat = None
@@ -18,15 +19,13 @@ def matrix_from_kron_facs(factors):
         if mat is None:
             mat = factor
         else:
-            new_shape = (mat.shape[0] * factor.shape[0],
-                         mat.shape[1] * factor.shape[1])
-            mat = einsum('ij,kl->ikjl',
-                         (mat, factor)).contiguous().view(new_shape)
+            new_shape = (mat.shape[0] * factor.shape[0], mat.shape[1] * factor.shape[1])
+            mat = einsum("ij,kl->ikjl", (mat, factor)).contiguous().view(new_shape)
     return mat
 
 
 def vp_from_kron_facs(factors):
-    """Return function v ↦ (A ⊗ B ⊗ ...)v for `factors = [A, B, ...]` """
+    """Return function v ↦ (A ⊗ B ⊗ ...)v for `factors = [A, B, ...]`"""
     assert all_tensors_of_order(order=2, tensors=factors)
 
     shapes = [list(f.size()) for f in factors]
@@ -72,4 +71,4 @@ def all_tensors_of_order(order, tensors):
 
 def get_letters(max_letters=26):
     for i in range(max_letters):
-        yield chr(ord('a') + i)
+        yield chr(ord("a") + i)

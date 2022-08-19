@@ -1,6 +1,7 @@
 from hesscale.hesscale_base import BaseModuleHesScale
 from hesscale.derivatives import FlattenDerivativesHesScale
 
+
 class HesScaleFlatten(BaseModuleHesScale):
     def __init__(self):
         super().__init__(derivatives=FlattenDerivativesHesScale())

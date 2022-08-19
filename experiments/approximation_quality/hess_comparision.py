@@ -25,7 +25,7 @@ class HessComp(nn.Module):
         #     torch.nn.Conv2d(1, 1, kernel_size=2),
         #     torch.nn.Tanh(),
         #     torch.nn.MaxPool2d(kernel_size=2),
-            
+
         #     torch.nn.Conv2d(1, 1, kernel_size=2),
         #     torch.nn.Tanh(),
 
@@ -167,12 +167,11 @@ class HessComp(nn.Module):
                 torch.abs(x - lamda * kfac_estimate).sum().item()
             )
             summed_errors["SGD2"][name] = (
-                torch.abs(x - lamda * param.grad.data.clone()**2).sum().item()
+                torch.abs(x - lamda * param.grad.data.clone() ** 2).sum().item()
             )
             # summed_errors["CONST"][name] = (
             #     torch.abs(x - lamda * 1.0).sum().item()
             # )
-            
 
         return summed_errors
 

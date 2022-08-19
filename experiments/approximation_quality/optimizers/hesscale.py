@@ -74,10 +74,10 @@ class HesScaleOptimizer(Optimizer):
                 denom = exp_hessian_diag.add_(group["eps"])
 
                 # if style == "adahess":
-                step_size =  group["lr"] / bias_correction1
+                step_size = group["lr"] / bias_correction1
                 # else:
-                    # step_size = bias_correction2 * group["lr"] / bias_correction1
-                
+                # step_size = bias_correction2 * group["lr"] / bias_correction1
+
                 # if style == "no_grad_h":
                 #     p.data.addcdiv_(exp_avg * (hess_param>0.0) , denom, value=-step_size)
                 # else:

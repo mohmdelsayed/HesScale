@@ -8,7 +8,9 @@ from torch import max as tor_max
 from torch import zeros_like
 from torch.optim import Optimizer
 from .utils import multiply_vec_with_kron_facs
+
 NUMERICAL_STABILITY_CONSTANT = 1e-12
+
 
 class KFACOptimizer(Optimizer):
     method = KFAC()
@@ -46,8 +48,7 @@ class KFACOptimizer(Optimizer):
                 state["step"] += 1
 
                 curv_p = getattr(p, group["method_field"])
-                
-                
+
                 kfac2, kfac1 = curv_p
 
                 # Tikhonov
@@ -55,7 +56,7 @@ class KFACOptimizer(Optimizer):
                 # shift for factor 1: pi * sqrt(gamma  + eta) = pi * sqrt(gamma)
                 shift1 = pi * math.sqrt(group["eps"])
                 # factor 2: 1 / pi * sqrt(gamma  + eta) = 1 / pi * sqrt(gamma)
-                shift2 = 1. / pi * math.sqrt(group["eps"])
+                shift2 = 1.0 / pi * math.sqrt(group["eps"])
 
                 # invert, take into account the diagonal term
                 inv_kfac1 = self.__inverse(kfac1, shift=shift1)
@@ -63,14 +64,11 @@ class KFACOptimizer(Optimizer):
 
                 grad_p_flat = p.grad.view(-1)
                 curv_adapted_grad = multiply_vec_with_kron_facs(
-                    [inv_kfac1, inv_kfac2], grad_p_flat)
+                    [inv_kfac1, inv_kfac2], grad_p_flat
+                )
                 curv_adapted_grad = curv_adapted_grad.view_as(p.grad)
 
                 p.data.add_(curv_adapted_grad, alpha=-group["lr"])
-                
-                
-                
-
 
     def __compute_tikhonov_factor(self, kfac1, kfac2):
         """Scalar pi from trace norm for factored Tikhonov regularization.
@@ -97,7 +95,7 @@ class KFACOptimizer(Optimizer):
         return eigvals, eigvecs
 
     def __inv_from_eigen(self, eigvals, eigvecs, truncate=NUMERICAL_STABILITY_CONSTANT):
-        inv_eigvals = 1. / eigvals
-        inv_eigvals.clamp_(min=0., max=1. / truncate)
+        inv_eigvals = 1.0 / eigvals
+        inv_eigvals.clamp_(min=0.0, max=1.0 / truncate)
         # return inv_eigvals, eigvecs
-        return einsum('ij,j,kj->ik', (eigvecs, inv_eigvals, eigvecs))
+        return einsum("ij,j,kj->ik", (eigvecs, inv_eigvals, eigvecs))

@@ -31,6 +31,7 @@ LINEAR = "linear"
 CONV = "conv"
 FLATTEN = "flatten"
 
+
 class ConvDerivativesHesScale(ConvNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
         if LOSS in mat or CONV in mat:
@@ -52,7 +53,7 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
 
     def conv_matrix(self, module, mat, sq=False):
         weight = module.weight ** 2 if sq else module.weight
-        
+
         input_size = list(module.input0.size())
         input_size[0] = mat.size(0)
 
@@ -75,6 +76,7 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
             groups=module.groups,
             dilation=module.dilation,
         )
+
 
 class ConvTransposeDerivativesHesScale(ConvTransposeNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
@@ -159,7 +161,7 @@ class AvgPoolNDDerivativesHesScale(AvgPoolNDDerivatives):
 
         convnd_t.weight.requires_grad = False
         avg_kernel = torch.ones_like(convnd_t.weight) / convnd_t.weight.numel()
-        convnd_t.weight.data = avg_kernel # should be _pow(2)
+        convnd_t.weight.data = avg_kernel  # should be _pow(2)
 
         V_N_C_in = mat.size(0)
         if self.N == 1:
@@ -212,7 +214,6 @@ class MaxPoolNDDerivativesHesScale(MaxPoolNDDerivatives):
         jmp_as_pool = self.__apply_jacobian_t_of(module, mat_as_pool)
         return self.reshape_like_input(jmp_as_pool, module)
 
-
     def __pool_idx_for_jac(self, module, V):
         """Manipulated pooling indices ready-to-use in jac(t)."""
         pool_idx = self.get_pooling_idx(module)
@@ -221,6 +222,7 @@ class MaxPoolNDDerivativesHesScale(MaxPoolNDDerivatives):
         V_axis = 0
 
         return pool_idx.unsqueeze(V_axis).expand(V, -1, -1, -1)
+
     def __apply_jacobian_t_of(self, module, mat):
         V = mat.shape[0]
         result = self.__zero_for_jac_t(module, V, mat.device)
@@ -251,6 +253,7 @@ class MaxPoolNDDerivativesHesScale(MaxPoolNDDerivatives):
 
         return zeros(shape, device=device)
 
+
 class FlattenDerivativesHesScale(FlattenDerivatives):
     def __init__(self):
         super().__init__()
@@ -263,7 +266,7 @@ class FlattenDerivativesHesScale(FlattenDerivatives):
                 LINEAR,
                 FLATTEN,
             )
-        elif ACTIVATION in mat:            
+        elif ACTIVATION in mat:
             return (
                 self.reshape_like_input(mat[0], module),
                 self.reshape_like_input(mat[1], module),

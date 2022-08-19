@@ -59,4 +59,3 @@ class GGNMCOptimizer(Optimizer):
                 step_size = bias_correction2 * group["lr"] / bias_correction1
 
                 p.data.addcdiv_(exp_avg, denom, value=-step_size)
-                
