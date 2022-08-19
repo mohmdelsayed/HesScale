@@ -96,6 +96,9 @@ class ModuleExtension:
         if not should_retain_grad:
             if hasattr(out, ext.savefield):
                 delattr(out, ext.savefield)
+        else:
+            if isinstance(bpQuantities, tuple):
+                setattr(out, ext.savefield + "_", bpQuantities[0].squeeze(0) + bpQuantities[1])
 
     @staticmethod
     def __param_exists_and_requires_grad(module, param):
