@@ -32,12 +32,11 @@ for i in range(T):
     loss = loss_func(prediction, target_class)
 
     optimizer.zero_grad()
-    with backpack(HesScale(savefield="hesscale")):
+    with backpack(HesScale()):
         loss.backward()
 
     optimizer.step()
 
-    # this is wrongs?
-    print(intermediate_variable.hesscale_.shape)
+    print("Non-leaf node size: ", intermediate_variable.hesscale_.shape)
     for (name, param) in model.named_parameters():
         print(name, param.hesscale.shape)

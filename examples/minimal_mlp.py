@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import torch
 from hesscale import HesScale
 from backpack import backpack, extend
