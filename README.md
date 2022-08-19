@@ -8,4 +8,6 @@ source .hesscale/bin/activate
 # install dependencies
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+pip install .
+python examples/minimal_mlp_example.py
 ```
