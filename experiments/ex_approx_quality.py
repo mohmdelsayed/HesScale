@@ -26,8 +26,10 @@ def run(configs, seed, lamda):
     # print(f"Started run with seed: {experiment.seed}")
     return experiment.train(lamda)
 
+
 lamda_range = [1.0]  # list(np.arange(-4, 6) * 0.125 + 0.5)
-normalizer = "GGN"
+normalizer = "HesScale"
+
 
 def main():
 
@@ -147,9 +149,9 @@ def main():
         color=colors,  # face color transparent
         alpha=0.3,
     )
-    
+
     # plot scattered dots around the bar of each method
-    rand_number = np.random.uniform(low=-w / 2, high=w / 2, size=normalized_y.shape[1])    
+    rand_number = np.random.uniform(low=-w / 2, high=w / 2, size=normalized_y.shape[1])
     repeated_x = np.repeat(np.asarray(x).reshape(-1, 1), normalized_y.shape[1], axis=1)
     x_matrix = repeated_x + rand_number
     y_matrix = normalized_y
@@ -159,7 +161,7 @@ def main():
             x_method,
             y_method,
             zorder=54,
-            color=colors[:len(x_method)],
+            color=colors[: len(x_method)],
             alpha=1.0,
             s=1.4,
         )
@@ -169,6 +171,7 @@ def main():
     plt.ylabel("Normalized L1 error")
     plt.savefig("plot3.pdf")
     plt.clf()
+
 
 if __name__ == "__main__":
     main()
