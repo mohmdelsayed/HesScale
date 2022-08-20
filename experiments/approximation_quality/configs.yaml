@@ -1,0 +1,13 @@
+lr: 0.004  # learning rate (support multiple lrs in a list)
+n_seeds: 40                 # number of seeds in the experiment
+n_processes: 8
+
+predictor_params: 
+    network_hidden_units: [8, 8, 8]
+    activation_func: 'tanh'
+
+data_generator_params:
+    in_size: 6
+    out_size: 10
+    batch_size: 1
+    dataset_size: 100
