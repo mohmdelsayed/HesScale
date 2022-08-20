@@ -18,81 +18,50 @@ from experiments.computational_cost.optimizers.hesscale import HesScaleOptimizer
 from experiments.computational_cost.optimizers.kfac import KFACOptimizer
 
 
-def get_optimizer(lnet, methods, method_name):
-    if method_name == "sgd":
-        opt = methods[method_name](lnet.parameters(), lr=1e-4)
-        opt_class_backpack = None
-    elif method_name == "adam":
-        opt = methods[method_name](lnet.parameters(), betas=[0, 0.999])
-        opt_class_backpack = None
-    elif method_name == "adahess":
-        opt = methods[method_name](lnet.parameters(), betas=[0, 0.999])
-        opt_class_backpack = None
-    elif method_name == "hesscale":
-        opt = methods[method_name](lnet.parameters(), betas=[0, 0.999])
-        opt_class_backpack = methods[method_name]
-    elif method_name == "ggn":
-        opt = methods[method_name](lnet.parameters(), betas=[0, 0.999])
-        opt_class_backpack = methods[method_name]
-    elif method_name == "ggnmc":
-        opt = methods[method_name](lnet.parameters(), betas=[0, 0.999])
-        opt_class_backpack = methods[method_name]
-    elif method_name == "h":
-        opt = methods[method_name](lnet.parameters(), betas=[0, 0.999])
-        opt_class_backpack = methods[method_name]
-    elif method_name == "kfac":
-        opt = methods[method_name](lnet.parameters(), betas=[0, 0.999])
-        opt_class_backpack = methods[method_name]
-    else:
-        raise "Method is not supported"
-    return opt, opt_class_backpack
-
-
 def main():
     np.random.seed(1234)
     torch.manual_seed(1234)
 
     methods = {
-        "hesscale": HesScaleOptimizer,
-        "adahess": Adahessian,
-        "ggn": GGNExactOptimizer,
-        "ggnmc": GGNMCOptimizer,
-        "adam": optim.Adam,
-        "sgd": optim.SGD,
-        "kfac": KFACOptimizer,
-        "h": ExactHessDiagOptimizer,
+        "HesScale": {"class": HesScaleOptimizer, "backpack": True},
+        "AdaHessian": {"class": Adahessian, "backpack": False},
+        "GGN": {"class": GGNExactOptimizer, "backpack": True},
+        "GGNMC/LM-HesScale": {"class": GGNMCOptimizer, "backpack": True},
+        "Adam": {"class": optim.Adam, "backpack": False},
+        "SGD": {"class": optim.SGD, "backpack": False},
+        "KFAC": {"class": KFACOptimizer, "backpack": True},
+        "H": {"class": ExactHessDiagOptimizer, "backpack": True},
     }
 
     all_means = []
     all_stds = []
     T = 1
-    option_quadratic = True
+    single_hidden_layer = True
+
     list_range = (
-        [1024, 2048, 4096, 8192, 16384, 32768]
-        if option_quadratic
-        else [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+        [1024, 2048, 4096, 8192, 16384]
+        if single_hidden_layer
+        else [2, 4]#, 8, 16, 32, 64, 128, 256, 512, 1024]
     )
 
     for output in list_range:
-
         means = []
         stds = []
-
-        if option_quadratic:
-            ninpts = 16
+        if single_hidden_layer:
+            nfeatures = 512
             layers = [
-                nn.Linear(1, ninpts, bias=False),
-                nn.Linear(ninpts, output, bias=False),
+                nn.Linear(1, nfeatures, bias=False),
+                nn.Linear(nfeatures, output, bias=False),
             ]
             net = nn.Sequential(*layers)
         else:
             ninpts = 1
-            nhidden = 1024
-            layers = [nn.Linear(ninpts, nhidden, bias=False)]
+            hidden_units = 1024
+            layers = [nn.Linear(ninpts, hidden_units, bias=False)]
             for i in range(output):
-                layers.append(nn.Linear(nhidden, nhidden, bias=False))
+                layers.append(nn.Linear(hidden_units, hidden_units, bias=False))
                 layers.append(nn.Tanh())
-            layers.append(nn.Linear(nhidden, 100, bias=False))
+            layers.append(nn.Linear(hidden_units, 100, bias=False))
             net = nn.Sequential(*layers)
             output = 100
         print("Number of params:", sum(p.numel() for p in net.parameters()))
@@ -117,17 +86,18 @@ def main():
                 loss = lossf(net(x), y)
                 opt.zero_grad()
 
-                prev_t = time.perf_counter()
-
                 if opt_class_backpack is not None:
                     with backpack(opt_class_backpack.method):
+                        prev_t = time.perf_counter()
                         loss.backward()
                 else:
+                    prev_t = time.perf_counter()
                     loss.backward(create_graph=True)
 
                 opt.step()
+                current_t = time.perf_counter()
 
-                loop_times[t] = time.perf_counter() - prev_t
+                loop_times[t] = current_t - prev_t
                 mses[0, t] = loss.item()
 
             means.append(loop_times.mean())
@@ -149,6 +119,15 @@ def main():
     plt.xlabel("Number of parameters")
     plt.yscale("log")
     plt.savefig("computational_cost.pdf")
+
+
+def get_optimizer(lnet, methods, method_name):
+    opt = methods[method_name]["class"](lnet.parameters(), lr=1e-4)
+    if methods[method_name]["backpack"]:
+        opt_class_backpack = methods[method_name]["class"]
+    else:
+        opt_class_backpack = None
+    return opt, opt_class_backpack
 
 
 if __name__ == "__main__":
