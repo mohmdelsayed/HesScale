@@ -9,6 +9,19 @@ from experiments.approximation_quality.act_func import activation_func
 from hesscale import HesScale
 from torch.optim import SGD
 
+methods = {
+    "HesScale": "hesscale",
+    "GGN": "diag_ggn_exact",
+    "GGNMC": "diag_ggn_mc",
+    "BL89": None,
+    "AdaHess": None,
+    "KFAC": None,
+    "SGD2": None,
+    "H": "diag_h",
+    "|H|": None,
+}
+
+
 class HessQualityExperiment:
     def __init__(
         self,
@@ -19,7 +32,7 @@ class HessQualityExperiment:
 
         torch.manual_seed(seed)
         np.random.seed(seed)
-        
+
         self.dataset_size = configs["data_generator_params"]["dataset_size"]
         self.batch_size = configs["data_generator_params"]["batch_size"]
         self.data_generator = TargetGenerator(**configs["data_generator_params"])
@@ -37,38 +50,44 @@ class HessQualityExperiment:
 
         inputs, labels = self.data_generator.get_dataset(dataset_size=self.dataset_size)
 
-        for (inp, label) in iterate_minibatches(inputs, labels, batchsize=self.batch_size):
+        for (inp, label) in self.iterate_minibatches(
+            inputs, labels, batchsize=self.batch_size
+        ):
             sample_error_per_method = self.approximator.compare_hess_methods(
                 inp, label, lamda=lamda
             )
 
             # self.approximator.learn(inp, label)
-            
+
             if not avgs_lists:
                 avgs_lists = sample_error_per_method.copy()
             else:
                 for method in sample_error_per_method:
                     for name in sample_error_per_method[method]:
-                            if type(avgs_lists[method][name]) is not list:
-                                avgs_lists[method][name] = [avgs_lists[method][name], sample_error_per_method[method][name]]
-                            else:
-                                avgs_lists[method][name].append(sample_error_per_method[method][name])
-                    
+                        if type(avgs_lists[method][name]) is not list:
+                            avgs_lists[method][name] = [
+                                avgs_lists[method][name],
+                                sample_error_per_method[method][name],
+                            ]
+                        else:
+                            avgs_lists[method][name].append(
+                                sample_error_per_method[method][name]
+                            )
+
         return avgs_lists
 
-
-def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
-    assert inputs.shape[0] == targets.shape[0]
-    if shuffle:
-        indices = np.arange(inputs.shape[0])
-        np.random.shuffle(indices)
-    for start_idx in range(0, inputs.shape[0], batchsize):
-        end_idx = min(start_idx + batchsize, inputs.shape[0])
+    def iterate_minibatches(self, inputs, targets, batchsize, shuffle=False):
+        assert inputs.shape[0] == targets.shape[0]
         if shuffle:
-            excerpt = indices[start_idx:end_idx]
-        else:
-            excerpt = slice(start_idx, end_idx)
-        yield inputs[excerpt], targets[excerpt]
+            indices = np.arange(inputs.shape[0])
+            np.random.shuffle(indices)
+        for start_idx in range(0, inputs.shape[0], batchsize):
+            end_idx = min(start_idx + batchsize, inputs.shape[0])
+            if shuffle:
+                excerpt = indices[start_idx:end_idx]
+            else:
+                excerpt = slice(start_idx, end_idx)
+            yield inputs[excerpt], targets[excerpt]
 
 
 class HessApprox(nn.Module):
@@ -78,15 +97,15 @@ class HessApprox(nn.Module):
         n_obs,
         lr=1e-4,
         network_shape=[128, 128, 128],
-        act='tanh',
+        act="tanh",
     ):
 
         super(HessApprox, self).__init__()
 
         if act not in activation_func:
-            raise 'Not available activation function'
-        
-        self.model = self.create_network(n_obs, network_shape, n_classes, act)        
+            raise "Not available activation function"
+
+        self.model = self.create_network(n_obs, network_shape, n_classes, act)
 
         self.model_softmax = nn.Sequential(
             copy.deepcopy(self.model), torch.nn.LogSoftmax(dim=1)
@@ -128,7 +147,9 @@ class HessApprox(nn.Module):
         ):
             loss.backward(create_graph=True)
 
-        adahess_diags = self.get_adahess_estimate(self.model.parameters(), mc_samples=100)
+        adahess_diags = self.get_adahess_estimate(
+            self.model.parameters(), mc_samples=100
+        )
 
         self.optimizer_softmax.zero_grad()
         with backpack(HesScale()):
@@ -136,15 +157,8 @@ class HessApprox(nn.Module):
 
         summed_errors = {}
 
-        summed_errors["HesScale"] = {}
-        summed_errors["GGN"] = {}
-        summed_errors["GGNMC"] = {}
-        summed_errors["BL89"] = {}
-        summed_errors["|H|"] = {}
-        summed_errors["AdaHess"] = {}
-        summed_errors["KFAC"] = {}
-        summed_errors["H"] = {}
-        summed_errors["SGD2"] = {}
+        for method in methods:
+            summed_errors[method] = {}
 
         for (name, param), (name_soft, param_soft), adahess_diag in zip(
             self.model.named_parameters(),
@@ -153,42 +167,55 @@ class HessApprox(nn.Module):
         ):
             exact_h_diagonals = param.diag_h.data.data
             kfac_estimate = self.get_kfac_estimate(param.kfac, param)
-            summed_errors["HesScale"][name] = (
-                torch.abs(exact_h_diagonals - lamda * param.hesscale.data).sum().item()
-            )
-            summed_errors["GGNMC"][name] = (
-                torch.abs(exact_h_diagonals - lamda * param.diag_ggn_mc.data).sum().item()
-            )
-            summed_errors["GGN"][name] = (
-                torch.abs(exact_h_diagonals - lamda * param.diag_ggn_exact.data).sum().item()
-            )
 
-            summed_errors["H"][name] = (
-                torch.abs(exact_h_diagonals - lamda * param.diag_h.data).sum().item()
-            )
-            summed_errors["BL89"][name] = (
-                torch.abs(exact_h_diagonals - lamda * param_soft.hesscale.data).sum().item()
-            )
-            summed_errors["|H|"][name] = torch.abs(exact_h_diagonals - 0.0).sum().item()
+            for method in methods:
+                if method == "|H|":
+                    summed_errors[method][name] = (
+                        torch.abs(exact_h_diagonals - 0.0).sum().item()
+                    )
+                elif method == "SGD2":
+                    summed_errors[method][name] = (
+                        torch.abs(exact_h_diagonals - lamda * param.grad.data ** 2)
+                        .sum()
+                        .item()
+                    )
+                elif method == "KFAC":
+                    summed_errors[method][name] = (
+                        torch.abs(exact_h_diagonals - lamda * kfac_estimate.data)
+                        .sum()
+                        .item()
+                    )
+                elif method == "AdaHess":
+                    summed_errors[method][name] = (
+                        torch.abs(exact_h_diagonals - lamda * adahess_diag.data)
+                        .sum()
+                        .item()
+                    )
+                elif method == "BL89":
+                    summed_errors[method][name] = (
+                        torch.abs(exact_h_diagonals - lamda * param_soft.hesscale.data)
+                        .sum()
+                        .item()
+                    )
+                else:
+                    summed_errors[method][name] = (
+                        torch.abs(
+                            exact_h_diagonals
+                            - lamda * getattr(param, methods[method]).data
+                        )
+                        .sum()
+                        .item()
+                    )
 
-            summed_errors["AdaHess"][name] = (
-                torch.abs(exact_h_diagonals - lamda * adahess_diag.data).sum().item()
-            )
-            summed_errors["KFAC"][name] = (
-                torch.abs(exact_h_diagonals - lamda * kfac_estimate.data).sum().item()
-            )
-            summed_errors["SGD2"][name] = (
-                torch.abs(exact_h_diagonals - lamda * param.grad.data ** 2).sum().item()
-            )
         return summed_errors
 
     def learn(self, state, label):
         label = torch.tensor(label).long()
         state = torch.tensor(state).float()
-        
+
         self.optimizer.zero_grad()
         self.optimizer_softmax.zero_grad()
-        
+
         loss = self.loss_func(self.model(state), label)
         loss_softmax = self.loss_func_log(self.model(state), label)
 
@@ -197,13 +224,17 @@ class HessApprox(nn.Module):
 
         self.optimizer.step()
         self.optimizer_softmax.step()
-            
+
     def create_network(self, n_obs, network_shape, n_classes, act):
         network = []
         index = 0
         network_shape = [n_obs, *network_shape, n_classes]
-        while index < len(network_shape)-1:
-            network.append(torch.nn.Linear(network_shape[index], network_shape[index+1], bias=True))
+        while index < len(network_shape) - 1:
+            network.append(
+                torch.nn.Linear(
+                    network_shape[index], network_shape[index + 1], bias=True
+                )
+            )
             network.append(activation_func[act]())
             index += 1
         network.pop(-1)
@@ -216,7 +247,7 @@ class HessApprox(nn.Module):
         :param gradsH: a list of torch variables
         :return: a list of torch tensors
         """
-        
+
         params = []
         grads = []
         for p in model_parameters:
