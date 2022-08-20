@@ -42,12 +42,8 @@ class GGNExactOptimizer(Optimizer):
                 beta1, beta2 = group["betas"]
 
                 state["step"] += 1
-
                 hess_param = getattr(p, group["method_field"]).detach()
-                # torch.max(hess_param, torch.tensor([0.0]), out=hess_param)
-                # assert (hess_param >= 0.0).all(), "Negative Hessian Values"
 
-                # Decay the first and second moment running average coefficient
                 exp_avg.mul_(beta1).add_(p.grad.detach_(), alpha=1 - beta1)
                 exp_hessian_diag.mul_(beta2).add_(hess_param, alpha=1 - beta2)
 
@@ -56,11 +52,6 @@ class GGNExactOptimizer(Optimizer):
 
                 denom = exp_hessian_diag.add_(group["eps"])
 
-                # step_size = bias_correction2 * group["lr"] / bias_correction1
-                step_size = group["lr"]
+                step_size = bias_correction2 * group["lr"] / bias_correction1
 
                 p.data.addcdiv_(exp_avg, denom, value=-step_size)
-
-                # hess_param = getattr(p, group['method_field']).detach_()
-                # torch.max(hess_param, torch.tensor([0.]), out=hess_param)
-                # p.data.addcdiv_(p.grad.detach_(), hess_param.add_(group['eps']), value=-0.0*group['lr'])
