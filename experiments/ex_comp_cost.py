@@ -6,6 +6,7 @@ import torch.optim as optim
 from backpack import backpack, extend
 from torch import nn
 import warnings
+import os
 
 warnings.filterwarnings("ignore")
 from experiments.computational_cost.optimizers.ada_hessian import Adahessian
@@ -19,6 +20,7 @@ from experiments.computational_cost.optimizers.kfac import KFACOptimizer
 
 
 def main():
+
     np.random.seed(1234)
     torch.manual_seed(1234)
 
@@ -36,78 +38,90 @@ def main():
     all_means = []
     all_stds = []
     T = 1
-    single_hidden_layer = True
+    singlelayer_exp_list = [512, 1024, 2048]  # , 4096, 8192]
+    non_singlelayer_exp_list = [2, 4, 8, 16]  # , 32, 64, 128,]# 256, 512, 1024]
 
-    list_range = (
-        [1024, 2048, 4096, 8192, 16384]
-        if single_hidden_layer
-        else [2, 4]#, 8, 16, 32, 64, 128, 256, 512, 1024]
+    single_hidden_layer = False
+    dirName = (
+        "data/ex_cost_comp_single_layer" if single_hidden_layer else "data/ex_cost_comp"
     )
+    data_name = "data_single_layer_" if single_hidden_layer else "data_"
 
-    for output in list_range:
-        means = []
-        stds = []
-        if single_hidden_layer:
-            nfeatures = 512
-            layers = [
-                nn.Linear(1, nfeatures, bias=False),
-                nn.Linear(nfeatures, output, bias=False),
-            ]
-            net = nn.Sequential(*layers)
-        else:
-            ninpts = 1
-            hidden_units = 1024
-            layers = [nn.Linear(ninpts, hidden_units, bias=False)]
-            for i in range(output):
-                layers.append(nn.Linear(hidden_units, hidden_units, bias=False))
-                layers.append(nn.Tanh())
-            layers.append(nn.Linear(hidden_units, 100, bias=False))
-            net = nn.Sequential(*layers)
-            output = 100
-        print("Number of params:", sum(p.numel() for p in net.parameters()))
+    if not os.path.exists(dirName):
+        list_range = (
+            singlelayer_exp_list if single_hidden_layer else non_singlelayer_exp_list
+        )
 
-        for method_name in methods:
-
-            opt, opt_class_backpack = get_optimizer(net, methods, method_name)
-
-            if opt_class_backpack is not None:
-                extend(net)
-                lossf = extend(nn.MSELoss())
+        for output in list_range:
+            means = []
+            stds = []
+            if single_hidden_layer:
+                nfeatures = 512
+                layers = [
+                    nn.Linear(1, nfeatures, bias=False),
+                    nn.Linear(nfeatures, output, bias=False),
+                ]
+                net = nn.Sequential(*layers)
             else:
-                lossf = nn.MSELoss()
+                ninpts = 1
+                hidden_units = 512
+                layers = [nn.Linear(ninpts, hidden_units, bias=False)]
+                for i in range(output):
+                    layers.append(nn.Linear(hidden_units, hidden_units, bias=False))
+                    layers.append(nn.Tanh())
+                layers.append(nn.Linear(hidden_units, 100, bias=False))
+                net = nn.Sequential(*layers)
+                output = 100
+            # print("Number of params:", sum(p.numel() for p in net.parameters()))
 
-            # Experiments
-            mses = np.zeros((1, T))
-            loop_times = np.zeros(T)
+            for method_name in methods:
 
-            for t in range(T):
-                x = torch.randn((1, 1))
-                y = torch.randn((1, output))
-                loss = lossf(net(x), y)
-                opt.zero_grad()
+                opt, opt_class_backpack = get_optimizer(net, methods, method_name)
 
                 if opt_class_backpack is not None:
-                    with backpack(opt_class_backpack.method):
-                        prev_t = time.perf_counter()
-                        loss.backward()
+                    extend(net)
+                    lossf = extend(nn.MSELoss())
                 else:
-                    prev_t = time.perf_counter()
-                    loss.backward(create_graph=True)
+                    lossf = nn.MSELoss()
 
-                opt.step()
-                current_t = time.perf_counter()
+                # Experiments
+                mses = np.zeros((1, T))
+                loop_times = np.zeros(T)
 
-                loop_times[t] = current_t - prev_t
-                mses[0, t] = loss.item()
+                for t in range(T):
+                    x = torch.randn((1, 1))
+                    y = torch.randn((1, output))
+                    loss = lossf(net(x), y)
+                    opt.zero_grad()
 
-            means.append(loop_times.mean())
-            stds.append(2.0 * loop_times.std() / math.sqrt(T))
+                    if opt_class_backpack is not None:
+                        with backpack(opt_class_backpack.method):
+                            prev_t = time.perf_counter()
+                            loss.backward()
+                    else:
+                        prev_t = time.perf_counter()
+                        loss.backward(create_graph=True)
 
-        all_means.append(means)
-        all_stds.append(stds)
+                    opt.step()
+                    current_t = time.perf_counter()
 
-    all_means_array = np.asarray(all_means)
-    all_stds_array = np.asarray(all_stds)
+                    loop_times[t] = current_t - prev_t
+                    mses[0, t] = loss.item()
+
+                means.append(loop_times.mean())
+                stds.append(2.0 * loop_times.std() / math.sqrt(T))
+
+            all_means.append(means)
+            all_stds.append(stds)
+
+        os.makedirs(dirName)
+        all_means_array = np.asarray(all_means)
+        all_stds_array = np.asarray(all_stds)
+        np.save(f"{dirName}/{data_name}means.npy", np.asarray(all_means))
+        np.save(f"{dirName}/{data_name}stds.npy", np.asarray(all_stds))
+    else:
+        all_means_array = np.load(f"{dirName}/{data_name}means.npy")
+        all_stds_array = np.load(f"{dirName}/{data_name}stds.npy")
 
     for mean, std in zip(all_means_array.T, all_stds_array.T):
         plt.plot(mean, linestyle="-", marker=".")
@@ -118,7 +132,12 @@ def main():
     plt.ylabel("Time in seconds")
     plt.xlabel("Number of parameters")
     plt.yscale("log")
-    plt.savefig("computational_cost.pdf")
+    file_name = (
+        f"{dirName}/computational_cost_single_layer.pdf"
+        if single_hidden_layer
+        else f"{dirName}/computational_cost.pdf"
+    )
+    plt.savefig(file_name)
 
 
 def get_optimizer(lnet, methods, method_name):
