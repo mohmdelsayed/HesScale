@@ -60,7 +60,7 @@ def main():
 
     figure_1(lamda_range, data_lambdas, n_seeds, dir_name)
     figure_2(data_lambdas[1], dir_name)
-    figure_3(data_lambdas[1], dir_name)
+    figure_3(data_lambdas[1], dir_name, normalizer)
 
 
 def figure_1(lamda_range, data_lambdas, n_seeds, dir_name):
@@ -151,7 +151,7 @@ def figure_2(data_lamda1, dir_name):
     plt.clf()
 
 
-def figure_3(data_lambda1, dir_name):
+def figure_3(data_lambda1, dir_name, normalizer):
 
     # Figure 3: Compute total L1 distance normalized by HesScale
     w = 0.8  # bar width
