@@ -10,13 +10,13 @@ from backpack import backpack, extend
 from backpack.extensions import DiagHessian, DiagGGNExact, DiagGGNMC
 
 from hesscale import HesScale
-from experiments.approximation_quality.optimizers.hesscale import HesScaleOptimizer
-from experiments.approximation_quality.optimizers.ggn import GGNExactOptimizer
-from experiments.approximation_quality.optimizers.ggn_mc import GGNMCOptimizer
-from experiments.approximation_quality.optimizers.exact_diag_hess import (
+from experiments.computational_cost.optimizers.hesscale import HesScaleOptimizer
+from experiments.computational_cost.optimizers.ggn import GGNExactOptimizer
+from experiments.computational_cost.optimizers.ggn_mc import GGNMCOptimizer
+from experiments.computational_cost.optimizers.exact_diag_hess import (
     ExactHessDiagOptimizer,
 )
-from experiments.approximation_quality.optimizers.ada_hessian import Adahessian
+from experiments.computational_cost.optimizers.ada_hessian import Adahessian
 
 
 def execute_steps(func, initial_state, optimizer_class, optimizer_config, num_iter=500):
@@ -152,8 +152,8 @@ def plot_rosenbrok(grad_iter, optimizer_name, lr):
 
 optimizers = [
     (torch.optim.Adam, -6, -0.1),
-    (torch.optim.SGD, -6, -0.5),
-    (HesScaleOptimizer, -6.0, -0.1),
+    # (torch.optim.SGD, -6, -0.5),
+    (HesScaleOptimizer, -6.0, 0.0),
     (Adahessian, -6, -0.0),
 ]
 # execute_experiments(

@@ -27,15 +27,14 @@ def run(configs, seed, lamda):
     return experiment.train(lamda)
 
 
-lamda_range = [1.0]  # list(np.arange(-4, 6) * 0.125 + 0.5)
-normalizer = "HesScale"
-
-
 def main():
 
     dir_name = "data/ex_approx_quality"
     configs_dir = "experiments/approximation_quality/configs"
     file_name = "data_lambdas"
+    lamda_range = [1.0]  # list(np.arange(-4, 6) * 0.125 + 0.5)
+    normalizer = "HesScale"
+
     data_lambdas = {}
     with open(f"{configs_dir}/configs.yaml") as file:
         configs = yaml.full_load(file)
