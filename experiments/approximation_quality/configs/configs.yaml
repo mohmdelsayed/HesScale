@@ -10,4 +10,4 @@ data_generator_params:
     in_size: 6
     out_size: 10
     batch_size: 1
-    dataset_size: 10
+    dataset_size: 1000
