@@ -37,11 +37,11 @@ def main():
 
     all_means = []
     all_stds = []
-    T = 1
-    singlelayer_exp_list = [512, 1024, 2048]  # , 4096, 8192]
-    non_singlelayer_exp_list = [2, 4, 8, 16]  # , 32, 64, 128,]# 256, 512, 1024]
+    T = 10
+    singlelayer_exp_list = [1024, 2048, 4096, 8192, 16384]
+    non_singlelayer_exp_list = [2, 4, 8, 16 , 32, 64, 128] # 256, 512, 1024]
 
-    single_hidden_layer = False
+    single_hidden_layer = True
     dirName = (
         "data/ex_cost_comp_single_layer" if single_hidden_layer else "data/ex_cost_comp"
     )
@@ -51,12 +51,12 @@ def main():
         list_range = (
             singlelayer_exp_list if single_hidden_layer else non_singlelayer_exp_list
         )
-
+        n_params = []
         for output in list_range:
             means = []
             stds = []
             if single_hidden_layer:
-                nfeatures = 512
+                nfeatures = 1024
                 layers = [
                     nn.Linear(1, nfeatures, bias=False),
                     nn.Linear(nfeatures, output, bias=False),
@@ -64,7 +64,7 @@ def main():
                 net = nn.Sequential(*layers)
             else:
                 ninpts = 1
-                hidden_units = 512
+                hidden_units = 1024
                 layers = [nn.Linear(ninpts, hidden_units, bias=False)]
                 for i in range(output):
                     layers.append(nn.Linear(hidden_units, hidden_units, bias=False))
@@ -72,7 +72,8 @@ def main():
                 layers.append(nn.Linear(hidden_units, 100, bias=False))
                 net = nn.Sequential(*layers)
                 output = 100
-            # print("Number of params:", sum(p.numel() for p in net.parameters()))
+            print("Number of params:", sum(p.numel() for p in net.parameters()))
+            n_params.append(sum(p.numel() for p in net.parameters()))
 
             for method_name in methods:
 
@@ -119,19 +120,27 @@ def main():
         all_stds_array = np.asarray(all_stds)
         np.save(f"{dirName}/{data_name}means.npy", np.asarray(all_means))
         np.save(f"{dirName}/{data_name}stds.npy", np.asarray(all_stds))
+        np.save(f"{dirName}/{data_name}n_params.npy", np.asarray(n_params))
+
     else:
         all_means_array = np.load(f"{dirName}/{data_name}means.npy")
         all_stds_array = np.load(f"{dirName}/{data_name}stds.npy")
-
+        n_params = np.load(f"{dirName}/{data_name}n_params.npy")
+        
     for mean, std in zip(all_means_array.T, all_stds_array.T):
-        plt.plot(mean, linestyle="-", marker=".")
+        plt.plot(n_params, mean, linestyle="-", marker=".")
         plt.fill_between(range(len(mean)), mean - std, mean + std, alpha=0.4)
 
     plt.legend(methods.keys())
     # plt.title("Computation time per each step")
     plt.ylabel("Time in seconds")
     plt.xlabel("Number of parameters")
+    plt.xscale("log", basex=2)
+    low_xlim = 2 ** math.floor(math.log2(n_params[0]))
+    high_xlim = 2 ** math.ceil(math.log2(n_params[-1]))
+    plt.xlim([low_xlim, high_xlim])
     plt.yscale("log")
+
     file_name = (
         f"{dirName}/computational_cost_single_layer.pdf"
         if single_hidden_layer
