@@ -58,8 +58,11 @@ for (name, param) in model.named_parameters():
     print(name, param.hesscale.shape)
 ```
 
-## Contribution
-We appreciate any help to extend HesScale to recurrent neural networks. If you consider contributing, don't hesitate to contact us.
+## Contributing
+We appreciate any help to extend HesScale to recurrent neural networks. If you consider contributing, please fork the repo and create a pull request. 
+
+## License
+Distributed under the [MIT License](https://opensource.org/licenses/MIT). See `LICENSE` for more information.
 
 
 ## How to cite
