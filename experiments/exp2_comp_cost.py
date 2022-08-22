@@ -7,6 +7,7 @@ from backpack import backpack, extend
 from torch import nn
 import warnings
 import os
+import matplotlib
 
 warnings.filterwarnings("ignore")
 from experiments.computational_cost.optimizers.ada_hessian import Adahessian
@@ -19,6 +20,12 @@ from experiments.computational_cost.optimizers.hesscale import HesScaleOptimizer
 from experiments.computational_cost.optimizers.kfac import KFACOptimizer
 
 
+matplotlib.rcParams["axes.spines.right"] = False
+matplotlib.rcParams["axes.spines.top"] = False
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
+
+
 def main():
 
     np.random.seed(1234)
@@ -27,21 +34,22 @@ def main():
     methods = {
         "HesScale": {"class": HesScaleOptimizer, "backpack": True},
         "AdaHessian": {"class": Adahessian, "backpack": False},
-        "GGN": {"class": GGNExactOptimizer, "backpack": True},
         "GGNMC/LM-HesScale": {"class": GGNMCOptimizer, "backpack": True},
         "Adam": {"class": optim.Adam, "backpack": False},
         "SGD": {"class": optim.SGD, "backpack": False},
+        "GGN": {"class": GGNExactOptimizer, "backpack": True},
         "KFAC": {"class": KFACOptimizer, "backpack": True},
         "H": {"class": ExactHessDiagOptimizer, "backpack": True},
     }
 
     all_means = []
     all_stds = []
-    T = 10
-    singlelayer_exp_list = [1024, 2048, 4096, 8192, 16384]
-    non_singlelayer_exp_list = [2, 4, 8, 16 , 32, 64, 128] # 256, 512, 1024]
+    T = 30
+    singlelayer_exp_list = [256, 512, 1024, 2048, 4096, 8192, 16384]
+    non_singlelayer_exp_list = [1, 2, 4, 8, 16, 32, 64, 128]
 
-    single_hidden_layer = True
+    single_hidden_layer = False
+    n_inputs = 64
     dirName = (
         "data/ex_cost_comp_single_layer" if single_hidden_layer else "data/ex_cost_comp"
     )
@@ -56,16 +64,15 @@ def main():
             means = []
             stds = []
             if single_hidden_layer:
-                nfeatures = 1024
+                nfeatures = 256
                 layers = [
-                    nn.Linear(1, nfeatures, bias=False),
+                    nn.Linear(n_inputs, nfeatures, bias=False),
                     nn.Linear(nfeatures, output, bias=False),
                 ]
                 net = nn.Sequential(*layers)
             else:
-                ninpts = 1
-                hidden_units = 1024
-                layers = [nn.Linear(ninpts, hidden_units, bias=False)]
+                hidden_units = 512
+                layers = [nn.Linear(n_inputs, hidden_units, bias=False)]
                 for i in range(output):
                     layers.append(nn.Linear(hidden_units, hidden_units, bias=False))
                     layers.append(nn.Tanh())
@@ -90,7 +97,7 @@ def main():
                 loop_times = np.zeros(T)
 
                 for t in range(T):
-                    x = torch.randn((1, 1))
+                    x = torch.randn((1, n_inputs))
                     y = torch.randn((1, output))
                     loss = lossf(net(x), y)
                     opt.zero_grad()
@@ -126,7 +133,7 @@ def main():
         all_means_array = np.load(f"{dirName}/{data_name}means.npy")
         all_stds_array = np.load(f"{dirName}/{data_name}stds.npy")
         n_params = np.load(f"{dirName}/{data_name}n_params.npy")
-        
+
     for mean, std in zip(all_means_array.T, all_stds_array.T):
         plt.plot(n_params, mean, linestyle="-", marker=".")
         plt.fill_between(range(len(mean)), mean - std, mean + std, alpha=0.4)
