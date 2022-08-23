@@ -64,13 +64,15 @@ We appreciate any help to extend HesScale to recurrent neural networks. If you c
 ## License
 Distributed under the [MIT License](https://opensource.org/licenses/MIT). See `LICENSE` for more information.
 
+## Reproduction
+To reproduce the experiments in the paper, you run the scripts in `experiemnts` directory for reproducing the approximation-quality experiment and the computational-cost experiment. For reproducing the training plots, please refer to the our other [repo](https://github.com/mohmdelsayed/HesScale-Comparisons) that uses [DeepOBS](https://github.com/fsschneider/DeepOBS) for complete reproduction of our optimization results.
 
 ## How to cite
 If you use our code, please consider citing our paper too.
 ```
 @inproceedings{elsayed2022hesscale,
     title     = {HesScale: Computation of Hessian Diagonals in a Scalable Way,
-    author    = {Mohamed Elsayed and Rupam Mahmood},
+    author    = {Mohamed Elsayed and A. Rupam Mahmood},
     booktitle = {},
     url       = {},
     year      = {2022}
