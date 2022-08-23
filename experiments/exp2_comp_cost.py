@@ -45,7 +45,7 @@ def main():
     all_means = []
     all_stds = []
     T = 30
-    singlelayer_exp_list = [256, 512, 1024, 2048, 4096, 8192, 16384]
+    singlelayer_exp_list = [256, 512, 1024, 2048, 4096, 8192]
     non_singlelayer_exp_list = [1, 2, 4, 8, 16, 32, 64, 128]
 
     single_hidden_layer = False
@@ -93,7 +93,6 @@ def main():
                     lossf = nn.MSELoss()
 
                 # Experiments
-                mses = np.zeros((1, T))
                 loop_times = np.zeros(T)
 
                 for t in range(T):
@@ -107,15 +106,16 @@ def main():
                             prev_t = time.perf_counter()
                             loss.backward()
                     else:
-                        prev_t = time.perf_counter()
-                        loss.backward(create_graph=True)
+                        if type(opt) == Adahessian:
+                            prev_t = time.perf_counter()
+                            loss.backward(create_graph=True)
+                        else:
+                            prev_t = time.perf_counter()
+                            loss.backward()
 
                     opt.step()
                     current_t = time.perf_counter()
-
                     loop_times[t] = current_t - prev_t
-                    mses[0, t] = loss.item()
-
                 means.append(loop_times.mean())
                 stds.append(2.0 * loop_times.std() / math.sqrt(T))
 
@@ -125,6 +125,7 @@ def main():
         os.makedirs(dirName)
         all_means_array = np.asarray(all_means)
         all_stds_array = np.asarray(all_stds)
+
         np.save(f"{dirName}/{data_name}means.npy", np.asarray(all_means))
         np.save(f"{dirName}/{data_name}stds.npy", np.asarray(all_stds))
         np.save(f"{dirName}/{data_name}n_params.npy", np.asarray(n_params))
