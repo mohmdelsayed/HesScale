@@ -45,7 +45,7 @@ from . import (
     pooling,
 )
 
-from optim_landscape.artificial_landscapes import RastriginLoss, RosenbrockLoss
+from experiments.optim_landscape.artificial_landscapes import RastriginLoss, RosenbrockLoss
 
 
 class HesScale(BackpropExtension):
