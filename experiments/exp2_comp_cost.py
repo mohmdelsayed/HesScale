@@ -17,6 +17,7 @@ from experiments.computational_cost.optimizers.exact_diag_hess import (
 from experiments.computational_cost.optimizers.ggn import GGNExactOptimizer
 from experiments.computational_cost.optimizers.ggn_mc import GGNMCOptimizer
 from experiments.computational_cost.optimizers.hesscale import HesScaleOptimizer
+from experiments.computational_cost.optimizers.hesscale_lm import HesScaleLMOptimizer
 from experiments.computational_cost.optimizers.kfac import KFACOptimizer
 
 
@@ -32,14 +33,15 @@ def main():
     torch.manual_seed(1234)
 
     methods = {
-        "HesScale": {"class": HesScaleOptimizer, "backpack": True},
-        "AdaHessian": {"class": Adahessian, "backpack": False},
-        "GGNMC/LM-HesScale": {"class": GGNMCOptimizer, "backpack": True},
+        "HS-BL89": {"class": HesScaleOptimizer, "backpack": True},
+        "AdaHess": {"class": Adahessian, "backpack": False},
+        "GGNMC": {"class": GGNMCOptimizer, "backpack": True},
+        "HSLM": {"class": HesScaleLMOptimizer, "backpack": True},
         "Adam": {"class": optim.Adam, "backpack": False},
         "SGD": {"class": optim.SGD, "backpack": False},
-        "GGN": {"class": GGNExactOptimizer, "backpack": True},
-        "KFAC": {"class": KFACOptimizer, "backpack": True},
-        "H": {"class": ExactHessDiagOptimizer, "backpack": True},
+        # "GGN": {"class": GGNExactOptimizer, "backpack": True},
+        # "KFAC": {"class": KFACOptimizer, "backpack": True},
+        # "H": {"class": ExactHessDiagOptimizer, "backpack": True},
     }
 
     all_means = []
