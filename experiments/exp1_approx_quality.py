@@ -17,6 +17,7 @@ matplotlib.rcParams["axes.spines.right"] = False
 matplotlib.rcParams["axes.spines.top"] = False
 matplotlib.rcParams["pdf.fonttype"] = 42
 matplotlib.rcParams["ps.fonttype"] = 42
+# matplotlib.rcParams.update({'font.size': 8})
 warnings.filterwarnings("ignore")
 
 
@@ -33,7 +34,7 @@ def main():
     configs_dir = "experiments/approximation_quality/configs"
     file_name = "data_lambdas"
     lamda_range = [1.0]  # list(np.arange(-4, 6) * 0.125 + 0.5)
-    normalizer = "HesScale"
+    normalizer = "HS"
 
     data_lambdas = {}
     with open(f"{configs_dir}/configs.yaml") as file:
@@ -156,6 +157,7 @@ def figure_3(data_lambda1, dir_name, normalizer):
     # Figure 3: Compute total L1 distance normalized by HesScale
     w = 0.8  # bar width
     colors = [XKCD_COLORS[key] for key in XKCD_COLORS]
+    colors_tab = TABLEAU_COLORS
     data = {}
     for result in data_lambda1:
         for method in result:
@@ -172,7 +174,8 @@ def figure_3(data_lambda1, dir_name, normalizer):
     methods = data.keys()
     x = range(len(methods))  # x-coordinates of your bars
     y = [np.asarray(data[method]).mean(axis=1) for method in methods]
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(8,5))
+    # fig, ax = plt.subplots()
 
     normalized_y = y / y[list(methods).index(normalizer)]
     ax.bar(
@@ -181,8 +184,8 @@ def figure_3(data_lambda1, dir_name, normalizer):
         capsize=4,  # error bar cap width in points
         width=w,  # bar width
         tick_label=methods,
-        color=colors,  # face color transparent
-        alpha=0.3,
+        color=colors_tab,  # face color transparent
+        alpha=0.5,
     )
 
     # plot scattered dots around the bar of each method
