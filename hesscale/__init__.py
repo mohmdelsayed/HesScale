@@ -32,17 +32,29 @@ from torch.nn import (
 
 from . import (
     activations,
+    activations_lm,
     conv1d,
+    conv1d_lm,
     conv2d,
+    conv2d_lm,
     conv3d,
+    conv3d_lm,
     convtranspose1d,
+    convtranspose1d_lm,
     convtranspose2d,
+    convtranspose2d_lm,
     convtranspose3d,
+    convtranspose3d_lm,
     dropout,
+    dropout_lm,
     flatten,
+    flatten_lm,
     linear,
+    linear_lm,
     losses,
+    losses_lm,
     pooling,
+    pooling_lm,
 )
 
 from experiments.optim_landscape.artificial_landscapes import RastriginLoss, RosenbrockLoss
@@ -83,5 +95,43 @@ class HesScale(BackpropExtension):
                 SELU: activations.SELUHesScale(),
                 LogSoftmax: activations.LogSoftmaxHesScale(),
                 Softmax: activations.SoftmaxHesScale(),
+            },
+        )
+
+class HesScaleLM(BackpropExtension):
+    def __init__(self, savefield="hesscale_lm"):
+        super().__init__(
+            savefield=savefield,
+            fail_mode="ERROR",
+            module_exts={
+                MSELoss: losses_lm.MSELossHesScale(),
+                NLLLoss: losses_lm.NLLLossHesScale(),
+                CrossEntropyLoss: losses_lm.CrossEntropyLossHesScale(),
+                RastriginLoss: losses_lm.RastriginLossHesScale(),
+                RosenbrockLoss: losses_lm.RosenbrockLossHesScale(),
+                Linear: linear_lm.LinearHesScale(),
+                MaxPool1d: pooling_lm.HesScaleMaxPool1d(),
+                AvgPool1d: pooling_lm.HesScaleAvgPool1d(),
+                MaxPool2d: pooling_lm.HesScaleMaxPool2d(),
+                AvgPool2d: pooling_lm.HesScaleAvgPool2d(),
+                MaxPool3d: pooling_lm.HesScaleMaxPool3d(),
+                AvgPool3d: pooling_lm.HesScaleAvgPool3d(),
+                Conv1d: conv1d_lm.HesScaleConv1d(),
+                Conv2d: conv2d_lm.HesScaleConv2d(),
+                Conv3d: conv3d_lm.HesScaleConv3d(),
+                ConvTranspose1d: convtranspose1d_lm.HesScaleConvTranspose1d(),
+                ConvTranspose2d: convtranspose2d_lm.HesScaleConvTranspose2d(),
+                ConvTranspose3d: convtranspose3d_lm.HesScaleConvTranspose3d(),
+                Dropout: dropout_lm.HesScaleDropout(),
+                Flatten: flatten_lm.HesScaleFlatten(),
+                ReLU: activations_lm.ReLUHesScale(),
+                Sigmoid: activations_lm.SigmoidHesScale(),
+                Tanh: activations_lm.TanhHesScale(),
+                LeakyReLU: activations_lm.LeakyReLUHesScale(),
+                LogSigmoid: activations_lm.LogSigmoidHesScale(),
+                ELU: activations_lm.ELUHesScale(),
+                SELU: activations_lm.SELUHesScale(),
+                LogSoftmax: activations_lm.LogSoftmaxHesScale(),
+                Softmax: activations_lm.SoftmaxHesScale(),
             },
         )
