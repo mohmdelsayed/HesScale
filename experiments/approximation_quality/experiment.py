@@ -6,17 +6,19 @@ from backpack import backpack, extend
 from backpack.extensions import DiagGGNExact, DiagGGNMC, DiagHessian, KFAC
 from experiments.approximation_quality.data_generator import TargetGenerator
 from experiments.approximation_quality.act_func import activation_func
-from hesscale import HesScale
+from hesscale import HesScale, HesScaleLM
 from torch.optim import SGD
 
 methods = {
-    "HesScale": "hesscale",
-    "GGN": "diag_ggn_exact",
-    "GGNMC": "diag_ggn_mc",
+    "HS": "hesscale",
     "BL89": None,
     "AdaHess": None,
+
+    "GGN": "diag_ggn_exact",
+    "HSLM": "hesscale_lm",
+    "GGNMC": "diag_ggn_mc",
     "KFAC": None,
-    "SGD2": None,
+    "g2": None,
     "H": "diag_h",
     "|H|": None,
 }
@@ -139,16 +141,17 @@ class HessApprox(nn.Module):
 
         self.optimizer.zero_grad()
         with backpack(
-            DiagGGNMC(mc_samples=100),
-            KFAC(mc_samples=100),
+            DiagGGNMC(mc_samples=50),
+            KFAC(mc_samples=50),
             HesScale(),
+            HesScaleLM(),
             DiagGGNExact(),
             DiagHessian(),
         ):
             loss.backward(create_graph=True)
 
         adahess_diags = self.get_adahess_estimate(
-            self.model.parameters(), mc_samples=100
+            self.model.parameters(), mc_samples=50
         )
 
         self.optimizer_softmax.zero_grad()
@@ -173,7 +176,7 @@ class HessApprox(nn.Module):
                     summed_errors[method][name] = (
                         torch.abs(exact_h_diagonals - 0.0).sum().item()
                     )
-                elif method == "SGD2":
+                elif method == "g2":
                     summed_errors[method][name] = (
                         torch.abs(exact_h_diagonals - lamda * param.grad.data ** 2)
                         .sum()
