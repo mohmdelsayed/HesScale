@@ -2,7 +2,6 @@ import torch
 from einops import rearrange
 from torch import einsum
 from torch.nn.functional import conv1d, conv2d, conv3d, unfold
-from hesscale.derivatives_lm import LOSS, ACTIVATION, LINEAR, CONV
 
 
 def unfold_input(module, input):
@@ -43,38 +42,30 @@ def separate_channels_and_pixels(module, tensor):
 
 
 def extract_weight_diagonal(module, backpropagated, sum_batch=True):
-    if LOSS in backpropagated or LINEAR in backpropagated or CONV in backpropagated or ACTIVATION in backpropagated:
+    unfolded_input = unfold_input(module, module.input0 ** 2)
 
-        unfolded_input = unfold_input(module, module.input0 ** 2)
+    S = rearrange(
+        backpropagated, "v n (g c) ... -> v n g c (...)", g=module.groups
+    )
+    unfolded_input = rearrange(
+        unfolded_input, "n (g c) k -> n g c k", g=module.groups
+    )
 
-        S = rearrange(
-            backpropagated[0], "v n (g c) ... -> v n g c (...)", g=module.groups
-        )
-        unfolded_input = rearrange(
-            unfolded_input, "n (g c) k -> n g c k", g=module.groups
-        )
+    JS = einsum("ngkl,vngml->vngmk", (unfolded_input, S))
 
-        JS = einsum("ngkl,vngml->vngmk", (unfolded_input, S))
+    sum_dims = [0, 1] if sum_batch else [0]
+    out_shape = (
+        module.weight.shape if sum_batch else (JS.shape[1], *module.weight.shape)
+    )
 
-        sum_dims = [0, 1] if sum_batch else [0]
-        out_shape = (
-            module.weight.shape if sum_batch else (JS.shape[1], *module.weight.shape)
-        )
-
-        weight_diagonal = JS.sum(sum_dims).reshape(out_shape)
-        return weight_diagonal
-    else:
-        raise NotImplementedError("No valid layer")
+    weight_diagonal = JS.sum(sum_dims).reshape(out_shape)
+    return weight_diagonal
 
 def extract_bias_diagonal(module, backpropagated, sum_batch=True):
-
-    if LOSS in backpropagated or LINEAR in backpropagated or CONV in backpropagated or ACTIVATION in backpropagated:
-        start_spatial = 3
-        sum_before = list(range(start_spatial, backpropagated[0].dim()))
-        sum_after = [0, 1] if sum_batch else [0]
-        return backpropagated[0].sum(sum_before).sum(sum_after)
-    else:
-        raise NotImplementedError("No valid layer")
+    start_spatial = 3
+    sum_before = list(range(start_spatial, backpropagated.dim()))
+    sum_after = [0, 1] if sum_batch else [0]
+    return backpropagated.sum(sum_before).sum(sum_after)
 
 
 def unfold_by_conv(input, module):

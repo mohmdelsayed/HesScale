@@ -210,10 +210,6 @@ class MaxPoolNDDerivativesHesScale(MaxPoolNDDerivatives):
             CONV,
         )
 
-        mat_as_pool = rearrange(mat, "v n c ... -> v n c (...)")
-        jmp_as_pool = self.__apply_jacobian_t_of(module, mat_as_pool)
-        return self.reshape_like_input(jmp_as_pool, module)
-
     def __pool_idx_for_jac(self, module, V):
         """Manipulated pooling indices ready-to-use in jac(t)."""
         pool_idx = self.get_pooling_idx(module)

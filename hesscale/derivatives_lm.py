@@ -34,7 +34,7 @@ FLATTEN = "flatten"
 
 class ConvDerivativesHesScale(ConvNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
-        return self.conv_matrix(module, mat.squeeze(0), sq=True).unsqueeze(0),
+        return self.conv_matrix(module, mat.squeeze(0), sq=True).unsqueeze(0)
 
     def conv_matrix(self, module, mat, sq=False):
         weight = module.weight ** 2 if sq else module.weight
@@ -65,7 +65,7 @@ class ConvDerivativesHesScale(ConvNDDerivatives):
 
 class ConvTransposeDerivativesHesScale(ConvTransposeNDDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
-        return self.conv_matrix(module, mat.squeeze(0), sq=True).unsqueeze(0),
+        return self.conv_matrix(module, mat.squeeze(0), sq=True).unsqueeze(0)
 
     def conv_matrix(self, module, mat, sq=False):
         jac_t = self.conv_func(
@@ -97,7 +97,7 @@ class AvgPoolNDDerivativesHesScale(AvgPoolNDDerivatives):
         jgout_as_pool = self.__apply_jacobian_t_of(module, gout_as_pool)
         self.__check_jmp_in_as_pool(g_out[0].unsqueeze(0), jgout_as_pool, module)
 
-        return self.reshape_like_input(jmat_as_pool, module),
+        return self.reshape_like_input(jmat_as_pool, module)
 
     def __make_single_channel(self, mat, module):
         """Create fake single-channel images, grouping batch,
@@ -154,10 +154,7 @@ class MaxPoolNDDerivativesHesScale(MaxPoolNDDerivatives):
         mat_as_pool = rearrange(mat, "v n c ... -> v n c (...)")
         jmat_as_pool = self.__apply_jacobian_t_of(module, mat_as_pool)
 
-        gout_as_pool = rearrange(g_out[0].unsqueeze(0), "v n c ... -> v n c (...)")
-        jgout_as_pool = self.__apply_jacobian_t_of(module, gout_as_pool)
-
-        return self.reshape_like_input(jmat_as_pool, module),
+        return self.reshape_like_input(jmat_as_pool, module)
 
     def __pool_idx_for_jac(self, module, V):
         """Manipulated pooling indices ready-to-use in jac(t)."""
@@ -204,7 +201,7 @@ class FlattenDerivativesHesScale(FlattenDerivatives):
         super().__init__()
 
     def diag_hessian(self, module, g_inp, g_out, mat):
-        return self.reshape_like_input(mat, module),
+        return self.reshape_like_input(mat, module)
 
 #############################################
 #                   MLP                     #

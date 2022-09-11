@@ -4,6 +4,7 @@ import torch
 from einops import rearrange
 from torch import einsum
 from torch.nn.functional import conv_transpose1d, conv_transpose2d, conv_transpose3d
+from hesscale.utils.conv_lm import unfold_input
 
 
 def get_weight_gradient_factors(input, grad_out, module, N):
@@ -21,7 +22,7 @@ def extract_weight_diagonal(module, backpropagated, sum_batch=True):
     unfolded_input = unfold_input(module, module.input0 ** 2)
 
     S = rearrange(
-        backpropagated[0], "v n (g o) ... -> v n g o (...)", g=module.groups
+        backpropagated, "v n (g o) ... -> v n g o (...)", g=module.groups
     )
     unfolded_input = rearrange(
         unfolded_input,
@@ -44,9 +45,9 @@ def extract_weight_diagonal(module, backpropagated, sum_batch=True):
 
 def extract_bias_diagonal(module, backpropagated, sum_batch=True):
         start_spatial = 3
-        sum_before = list(range(start_spatial, backpropagated[0].dim()))
+        sum_before = list(range(start_spatial, backpropagated.dim()))
         sum_after = [0, 1] if sum_batch else [0]
-        return backpropagated[0].sum(sum_before).sum(sum_after)
+        return backpropagated.sum(sum_before).sum(sum_after)
 
 
 
