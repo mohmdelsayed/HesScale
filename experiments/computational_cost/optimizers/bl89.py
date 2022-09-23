@@ -8,7 +8,7 @@ from torch import zeros_like
 from torch.optim import Optimizer
 
 
-class HesScaleOptimizer(Optimizer):
+class BL89Optimizer(Optimizer):
     method = HesScale()
 
     def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
@@ -23,7 +23,7 @@ class HesScaleOptimizer(Optimizer):
         defaults = dict(
             lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield
         )
-        super(HesScaleOptimizer, self).__init__(params, defaults)
+        super(BL89Optimizer, self).__init__(params, defaults)
 
     def step(self):
         for group in self.param_groups:
@@ -45,9 +45,7 @@ class HesScaleOptimizer(Optimizer):
                 hess_param = getattr(p, group["method_field"]).detach()
 
                 exp_avg.mul_(beta1).add_(p.grad.detach_(), alpha=1 - beta1)
-                exp_hessian_diag.mul_(beta2).add_(
-                    hess_param * (hess_param > 0.0), alpha=1 - beta2
-                )
+                exp_hessian_diag.mul_(beta2).add_(torch.abs_(hess_param), alpha=1 - beta2)
 
                 bias_correction1 = 1 - beta1 ** state["step"]
                 bias_correction2 = 1 - beta2 ** state["step"]
