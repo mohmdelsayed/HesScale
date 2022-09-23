@@ -9,15 +9,26 @@ from experiments.approximation_quality.act_func import activation_func
 from hesscale import HesScale, HesScaleLM
 from torch.optim import SGD
 
+DiagGGNMC_1 = DiagGGNMC(mc_samples=1)
+DiagGGNMC_1.savefield = "diag_ggn_mc_1"
+DiagGGNMC_50 = DiagGGNMC(mc_samples=50)
+DiagGGNMC_50.savefield = "diag_ggn_mc_50"
+KFAC_1 = KFAC(mc_samples=1)
+KFAC_1.savefield = "kfac_1"
+KFAC_50 = KFAC(mc_samples=50)
+KFAC_50.savefield = "kfac_50"
 methods = {
     "HS": "hesscale",
     "BL89": None,
-    "AdaHess": None,
+    "AdaHess_1": None,
+    "AdaHess_50": None,
 
     "GGN": "diag_ggn_exact",
     "HSLM": "hesscale_lm",
-    "GGNMC": "diag_ggn_mc",
-    "KFAC": None,
+    "GGNMC_1": "diag_ggn_mc_1",
+    "GGNMC_50": "diag_ggn_mc_50",
+    "KFAC_1": None,
+    "KFAC_50": None,
     "g2": None,
     "H": "diag_h",
     "|H|": None,
@@ -141,8 +152,10 @@ class HessApprox(nn.Module):
 
         self.optimizer.zero_grad()
         with backpack(
-            DiagGGNMC(mc_samples=50),
-            KFAC(mc_samples=50),
+            DiagGGNMC_1,
+            DiagGGNMC_50,
+            KFAC_1,
+            KFAC_50,
             HesScale(),
             HesScaleLM(),
             DiagGGNExact(),
@@ -150,7 +163,10 @@ class HessApprox(nn.Module):
         ):
             loss.backward(create_graph=True)
 
-        adahess_diags = self.get_adahess_estimate(
+        adahess_diags_1 = self.get_adahess_estimate(
+            self.model.parameters(), mc_samples=1
+        )
+        adahess_diags_50 = self.get_adahess_estimate(
             self.model.parameters(), mc_samples=50
         )
 
@@ -163,13 +179,15 @@ class HessApprox(nn.Module):
         for method in methods:
             summed_errors[method] = {}
 
-        for (name, param), (name_soft, param_soft), adahess_diag in zip(
+        for (name, param), (name_soft, param_soft), adahess_diag_1, adahess_diag_50 in zip(
             self.model.named_parameters(),
             self.model_softmax.named_parameters(),
-            adahess_diags,
+            adahess_diags_1,
+            adahess_diags_50
         ):
             exact_h_diagonals = param.diag_h.data.data
-            kfac_estimate = self.get_kfac_estimate(param.kfac, param)
+            kfac_estimate_1 = self.get_kfac_estimate(param.kfac_1, param)
+            kfac_estimate_50 = self.get_kfac_estimate(param.kfac_50, param)
 
             for method in methods:
                 if method == "|H|":
@@ -182,15 +200,27 @@ class HessApprox(nn.Module):
                         .sum()
                         .item()
                     )
-                elif method == "KFAC":
+                elif method == "KFAC_1":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * kfac_estimate.data)
+                        torch.abs(exact_h_diagonals - lamda * kfac_estimate_1.data)
                         .sum()
                         .item()
                     )
-                elif method == "AdaHess":
+                elif method == "KFAC_50":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * adahess_diag.data)
+                        torch.abs(exact_h_diagonals - lamda * kfac_estimate_50.data)
+                        .sum()
+                        .item()
+                    )
+                elif method == "AdaHess_50":
+                    summed_errors[method][name] = (
+                        torch.abs(exact_h_diagonals - lamda * adahess_diag_50.data)
+                        .sum()
+                        .item()
+                    )
+                elif method == "AdaHess_1":
+                    summed_errors[method][name] = (
+                        torch.abs(exact_h_diagonals - lamda * adahess_diag_1.data)
                         .sum()
                         .item()
                     )
