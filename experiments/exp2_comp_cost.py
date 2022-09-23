@@ -16,8 +16,9 @@ from experiments.computational_cost.optimizers.exact_diag_hess import (
 )
 from experiments.computational_cost.optimizers.ggn import GGNExactOptimizer
 from experiments.computational_cost.optimizers.ggn_mc import GGNMCOptimizer
-from experiments.computational_cost.optimizers.hesscale import HesScaleOptimizer
-from experiments.computational_cost.optimizers.hesscale_lm import HesScaleLMOptimizer
+from experiments.computational_cost.optimizers.ada_hesscale import HesScaleOptimizer
+from experiments.computational_cost.optimizers.bl89 import BL89Optimizer
+from experiments.computational_cost.optimizers.ada_hesscale_lm import HesScaleLMOptimizer
 from experiments.computational_cost.optimizers.kfac import KFACOptimizer
 
 
@@ -33,12 +34,13 @@ def main():
     torch.manual_seed(1234)
 
     methods = {
-        "HS-BL89": {"class": HesScaleOptimizer, "backpack": True},
-        "AdaHess": {"class": Adahessian, "backpack": False},
-        "GGNMC": {"class": GGNMCOptimizer, "backpack": True},
-        "HSLM": {"class": HesScaleLMOptimizer, "backpack": True},
         "Adam": {"class": optim.Adam, "backpack": False},
         "SGD": {"class": optim.SGD, "backpack": False},
+        "BL89": {"class": BL89Optimizer, "backpack": True},
+        "AdaHessian": {"class": Adahessian, "backpack": False},
+        "GGNMC": {"class": GGNMCOptimizer, "backpack": True},
+        "AdaHesScaleLM": {"class": HesScaleLMOptimizer, "backpack": True},
+        "AdaHesScale": {"class": HesScaleOptimizer, "backpack": True},
         # "GGN": {"class": GGNExactOptimizer, "backpack": True},
         # "KFAC": {"class": KFACOptimizer, "backpack": True},
         # "H": {"class": ExactHessDiagOptimizer, "backpack": True},
@@ -58,6 +60,10 @@ def main():
     data_name = "data_single_layer_" if single_hidden_layer else "data_"
 
     if not os.path.exists(dirName):
+        # necessary to make the script cpu intensive to prevent the use of efficiency cores (M1 chip)
+        s=0
+        for i in range(100000000):
+            s+=1
         list_range = (
             singlelayer_exp_list if single_hidden_layer else non_singlelayer_exp_list
         )
