@@ -21,9 +21,7 @@ def extract_weight_diagonal(module, backpropagated, sum_batch=True):
 
     unfolded_input = unfold_input(module, module.input0 ** 2)
 
-    S = rearrange(
-        backpropagated, "v n (g o) ... -> v n g o (...)", g=module.groups
-    )
+    S = rearrange(backpropagated, "v n (g o) ... -> v n g o (...)", g=module.groups)
     unfolded_input = rearrange(
         unfolded_input,
         "n (g c) (k x) -> n g c k x",
@@ -44,11 +42,10 @@ def extract_weight_diagonal(module, backpropagated, sum_batch=True):
 
 
 def extract_bias_diagonal(module, backpropagated, sum_batch=True):
-        start_spatial = 3
-        sum_before = list(range(start_spatial, backpropagated.dim()))
-        sum_after = [0, 1] if sum_batch else [0]
-        return backpropagated.sum(sum_before).sum(sum_after)
-
+    start_spatial = 3
+    sum_before = list(range(start_spatial, backpropagated.dim()))
+    sum_after = [0, 1] if sum_batch else [0]
+    return backpropagated.sum(sum_before).sum(sum_after)
 
 
 def unfold_by_conv_transpose(input, module):

@@ -44,12 +44,8 @@ def separate_channels_and_pixels(module, tensor):
 def extract_weight_diagonal(module, backpropagated, sum_batch=True):
     unfolded_input = unfold_input(module, module.input0 ** 2)
 
-    S = rearrange(
-        backpropagated, "v n (g c) ... -> v n g c (...)", g=module.groups
-    )
-    unfolded_input = rearrange(
-        unfolded_input, "n (g c) k -> n g c k", g=module.groups
-    )
+    S = rearrange(backpropagated, "v n (g c) ... -> v n g c (...)", g=module.groups)
+    unfolded_input = rearrange(unfolded_input, "n (g c) k -> n g c k", g=module.groups)
 
     JS = einsum("ngkl,vngml->vngmk", (unfolded_input, S))
 
@@ -60,6 +56,7 @@ def extract_weight_diagonal(module, backpropagated, sum_batch=True):
 
     weight_diagonal = JS.sum(sum_dims).reshape(out_shape)
     return weight_diagonal
+
 
 def extract_bias_diagonal(module, backpropagated, sum_batch=True):
     start_spatial = 3
