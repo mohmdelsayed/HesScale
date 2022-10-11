@@ -203,6 +203,7 @@ class FlattenDerivativesHesScale(FlattenDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
         return self.reshape_like_input(mat, module)
 
+
 #############################################
 #                   MLP                     #
 #############################################
@@ -211,6 +212,7 @@ class FlattenDerivativesHesScale(FlattenDerivatives):
 class LinearDerivativesHesScale(LinearDerivatives):
     def diag_hessian(self, module, g_inp, g_out, mat):
         return einsum("oi,vno->vni", (module.weight.data ** 2, mat))
+
 
 #############################################
 #                 Losses                    #
@@ -230,26 +232,6 @@ class CrossEntropyLossDerivativesHesScale(CrossEntropyLossDerivatives):
         self._check_2nd_order_parameters(module)
         probs = self._get_probs(module)
         diag_H = (probs - probs ** 2).unsqueeze_(0)
-        if module.reduction == "mean":
-            diag_H /= module.input0.shape[0]
-        return diag_H
-
-
-class RastriginLossDerivativesHesScale:
-    def diag_hessian(self, module, g_inp, g_out):
-        diag_H = zeros_like(module.input0)
-        diag_H[0] = 2.0 + 40.0 * (pi ** 2) * cos(2 * pi * module.input0[0])
-        diag_H[1] = 2.0 + 40.0 * (pi ** 2) * cos(2 * pi * module.input0[1])
-        if module.reduction == "mean":
-            diag_H /= module.input0.shape[0]
-        return diag_H
-
-
-class RosenbrockLossDerivativesHesScale:
-    def diag_hessian(self, module, g_inp, g_out):
-        diag_H = zeros_like(module.input0)
-        diag_H[0] = 2.0 - 400.0 * module.input0[1] + 1200.0 * (module.input0[0] ** 2)
-        diag_H[1] = 200.0
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]
         return diag_H
@@ -347,6 +329,7 @@ class DropoutDerivativesHesScale(BaseActivationDerivatives, DropoutDerivatives):
 class TanhDerivativesHesScale(BaseActivationDerivatives, TanhDerivatives):
     def __init__(self):
         super().__init__()
+
     def d2f(self, module, g_inp, g_out):
         return zeros_like(module.input0)
 
@@ -354,6 +337,7 @@ class TanhDerivativesHesScale(BaseActivationDerivatives, TanhDerivatives):
 class SELUDerivativesHesScale(BaseActivationDerivatives, SELUDerivatives):
     def __init__(self):
         super().__init__()
+
     def d2f(self, module, g_inp, g_out):
         return zeros_like(module.input0)
 
@@ -361,6 +345,7 @@ class SELUDerivativesHesScale(BaseActivationDerivatives, SELUDerivatives):
 class ELUDerivativesHesScale(BaseActivationDerivatives, ELUDerivatives):
     def __init__(self):
         super().__init__()
+
     def d2f(self, module, g_inp, g_out):
         return zeros_like(module.input0)
 
@@ -368,6 +353,7 @@ class ELUDerivativesHesScale(BaseActivationDerivatives, ELUDerivatives):
 class SigmoidDerivativesHesScale(BaseActivationDerivatives, SigmoidDerivatives):
     def __init__(self):
         super().__init__()
+
     def d2f(self, module, g_inp, g_out):
         return zeros_like(module.input0)
 
@@ -375,6 +361,7 @@ class SigmoidDerivativesHesScale(BaseActivationDerivatives, SigmoidDerivatives):
 class LogSigmoidDerivativesHesScale(BaseActivationDerivatives, LogSigmoidDerivatives):
     def __init__(self):
         super().__init__()
+
     def d2f(self, module, g_inp, g_out):
         return zeros_like(module.input0)
 

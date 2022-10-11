@@ -57,8 +57,6 @@ from . import (
     pooling_lm,
 )
 
-from experiments.optim_landscape.artificial_landscapes import RastriginLoss, RosenbrockLoss
-
 
 class HesScale(BackpropExtension):
     def __init__(self, savefield="hesscale"):
@@ -69,8 +67,6 @@ class HesScale(BackpropExtension):
                 MSELoss: losses.MSELossHesScale(),
                 NLLLoss: losses.NLLLossHesScale(),
                 CrossEntropyLoss: losses.CrossEntropyLossHesScale(),
-                RastriginLoss: losses.RastriginLossHesScale(),
-                RosenbrockLoss: losses.RosenbrockLossHesScale(),
                 Linear: linear.LinearHesScale(),
                 MaxPool1d: pooling.HesScaleMaxPool1d(),
                 AvgPool1d: pooling.HesScaleAvgPool1d(),
@@ -98,6 +94,7 @@ class HesScale(BackpropExtension):
             },
         )
 
+
 class HesScaleLM(BackpropExtension):
     def __init__(self, savefield="hesscale_lm"):
         super().__init__(
@@ -107,8 +104,6 @@ class HesScaleLM(BackpropExtension):
                 MSELoss: losses_lm.MSELossHesScale(),
                 NLLLoss: losses_lm.NLLLossHesScale(),
                 CrossEntropyLoss: losses_lm.CrossEntropyLossHesScale(),
-                RastriginLoss: losses_lm.RastriginLossHesScale(),
-                RosenbrockLoss: losses_lm.RosenbrockLossHesScale(),
                 Linear: linear_lm.LinearHesScale(),
                 MaxPool1d: pooling_lm.HesScaleMaxPool1d(),
                 AvgPool1d: pooling_lm.HesScaleAvgPool1d(),

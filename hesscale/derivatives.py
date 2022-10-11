@@ -315,7 +315,15 @@ class LinearDerivativesHesScale(LinearDerivatives):
 
 class MSELossDerivativesHesScale(MSELossDerivatives):
     def diag_hessian(self, module, g_inp, g_out):
-        diag_H = ones(1, module.input0.size(0), module.input0.size(1), device=module.input0.device) * 2.0
+        diag_H = (
+            ones(
+                1,
+                module.input0.size(0),
+                module.input0.size(1),
+                device=module.input0.device,
+            )
+            * 2.0
+        )
         if module.reduction == "mean":
             diag_H /= module.input0.numel()
         return (diag_H, LOSS)
@@ -331,29 +339,11 @@ class CrossEntropyLossDerivativesHesScale(CrossEntropyLossDerivatives):
         return (diag_H, LOSS)
 
 
-class RastriginLossDerivativesHesScale:
-    def diag_hessian(self, module, g_inp, g_out):
-        diag_H = zeros_like(module.input0)
-        diag_H[0] = 2.0 + 40.0 * (pi ** 2) * cos(2 * pi * module.input0[0])
-        diag_H[1] = 2.0 + 40.0 * (pi ** 2) * cos(2 * pi * module.input0[1])
-        if module.reduction == "mean":
-            diag_H /= module.input0.shape[0]
-        return diag_H
-
-
-class RosenbrockLossDerivativesHesScale:
-    def diag_hessian(self, module, g_inp, g_out):
-        diag_H = zeros_like(module.input0)
-        diag_H[0] = 2.0 - 400.0 * module.input0[1] + 1200.0 * (module.input0[0] ** 2)
-        diag_H[1] = 200.0
-        if module.reduction == "mean":
-            diag_H /= module.input0.shape[0]
-        return diag_H
-
-
 class NLLLossDerivativesHesScale:
     def diag_hessian(self, module, g_inp, g_out):
-        diag_H = zeros(1, module.input0.size(0), module.input0.size(1), device=module.input0.device)
+        diag_H = zeros(
+            1, module.input0.size(0), module.input0.size(1), device=module.input0.device
+        )
         return (diag_H, LOSS)
 
 
