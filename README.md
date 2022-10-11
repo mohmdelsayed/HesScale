@@ -39,7 +39,6 @@ model = torch.nn.Sequential(
 )
 loss_func = torch.nn.CrossEntropyLoss()
 optimizer = AdaHesScale(model.parameters(), lr=lr)
-savefield = optimizer.method.savefield
 
 extend(model)
 extend(loss_func)
