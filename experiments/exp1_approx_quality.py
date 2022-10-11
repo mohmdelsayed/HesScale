@@ -4,11 +4,11 @@ import warnings
 from multiprocessing import Pool
 
 import matplotlib
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt 
 import numpy as np
 import yaml
 import pickle
-from utils import TABLEAU_COLORS, XKCD_COLORS
+from utils import XKCD_COLORS
 from experiments.approximation_quality.experiment import HessQualityExperiment
 from experiments.approximation_quality.utils import unpack
 
@@ -17,7 +17,7 @@ matplotlib.rcParams["axes.spines.right"] = False
 matplotlib.rcParams["axes.spines.top"] = False
 matplotlib.rcParams["pdf.fonttype"] = 42
 matplotlib.rcParams["ps.fonttype"] = 42
-# matplotlib.rcParams.update({'font.size': 8})
+matplotlib.rcParams.update({'font.size': 10})
 warnings.filterwarnings("ignore")
 
 
@@ -59,14 +59,36 @@ def main():
         with open(f"{dir_name}/{file_name}.pkl", "rb") as f:
             data_lambdas = pickle.load(f)
 
-    figure_1(lamda_range, data_lambdas, n_seeds, dir_name)
-    figure_2(data_lambdas[1], dir_name)
-    figure_3(data_lambdas[1], dir_name, normalizer)
+    colors = [
+        'tab:green',
+        'tab:purple',
+        'tab:brown',
+
+        "#CD5C5C", #indianred
+
+        "tab:gray",
+        "tab:orange",
+        "tab:blue",
+
+        "skyblue",
+        
+        "tab:olive",
+        
+        "#DEB887", #burlywood
+        "#FFA07A", #lightsalmon
+        "#607c8e", #blue grey
+        "#556B2F", #darkolivegreen
+    ]
 
 
-def figure_1(lamda_range, data_lambdas, n_seeds, dir_name):
+    figure_1(lamda_range, data_lambdas, n_seeds, dir_name, colors)
+    figure_2(data_lambdas[1], dir_name, colors)
+    figure_3(data_lambdas[1], dir_name, normalizer, colors)
+
+
+def figure_1(lamda_range, data_lambdas, n_seeds, dir_name, colors):
     # Figure 1: plot the summed errors over the number of samples per each method
-    for lamda in lamda_range:
+    for lamda, color in zip(lamda_range, colors):
         data = {}
         for result in data_lambdas[lamda]:
             for method in result:
@@ -102,6 +124,7 @@ def figure_1(lamda_range, data_lambdas, n_seeds, dir_name):
             methods,
             bar_means,
             linewidth=0.8,
+            color=color,
         )
         plt.title("Quality of Diagonal Hessian Approximations")
         plt.yscale("log")
@@ -112,14 +135,14 @@ def figure_1(lamda_range, data_lambdas, n_seeds, dir_name):
     plt.clf()
 
 
-def figure_2(data_lamda1, dir_name):
+def figure_2(data_lamda1, dir_name, colors):
     # Figure 2: compute sum errors over the number of samples per each method per each layer
     errors_per_method_per_layer = {}
     methods = data_lamda1[0].keys()
     for i, result in enumerate(data_lamda1):
         for method in methods:
-            if method == 'H':
-                continue
+            # if method == 'H':
+            #     continue
             if not method in errors_per_method_per_layer:
                 errors_per_method_per_layer[method] = np.zeros(
                     (len(data_lamda1), len(result[method]) // 2)
@@ -138,29 +161,30 @@ def figure_2(data_lamda1, dir_name):
 
             errors_per_method_per_layer[method][i, :] = np.asarray(erros_per_layer)
 
-    for method in errors_per_method_per_layer:
+    for method, color in zip(errors_per_method_per_layer, colors):
         plt.plot(
             range(1, len(result[method]) // 2 + 1),
             errors_per_method_per_layer[method].mean(axis=0),
             linestyle="-", marker=".",
+            color=color,
         )
         plt.yscale("symlog", linthreshy=1e-1)
     plt.legend([method for method in errors_per_method_per_layer])
     # plt.title("Quality with number of layers")
     plt.xticks(range(1, len(result[method]) // 2 + 1))
-    plt.ylabel("L1 Error")
-    plt.xlabel("Layer Number")
     plt.ylim(bottom=0.0)
-    plt.savefig(f"{dir_name}/plot2.pdf", format="pdf")
+    plt.ylabel("L1 Error", fontsize=20)
+    plt.xlabel("Layer Number", fontsize=20)
+    plt.savefig(f"{dir_name}/layer-wise_L1_error.pdf", bbox_inches='tight')
     plt.clf()
 
 
-def figure_3(data_lambda1, dir_name, normalizer):
+def figure_3(data_lambda1, dir_name, normalizer, colors_tab):
 
     # Figure 3: Compute total L1 distance normalized by HesScale
     w = 0.8  # bar width
     colors = [XKCD_COLORS[key] for key in XKCD_COLORS]
-    colors_tab = TABLEAU_COLORS
+
     data = {}
     for result in data_lambda1:
         for method in result:
@@ -188,7 +212,7 @@ def figure_3(data_lambda1, dir_name, normalizer):
         width=w,  # bar width
         tick_label=methods,
         color=colors_tab,  # face color transparent
-        alpha=0.5,
+        alpha=0.75,
     )
     ax2.bar(
         x,
@@ -197,7 +221,7 @@ def figure_3(data_lambda1, dir_name, normalizer):
         width=w,  # bar width
         tick_label=methods,
         color=colors_tab,  # face color transparent
-        alpha=0.5,
+        alpha=0.75,
     )
 
     # plot scattered dots around the bar of each method
@@ -229,12 +253,10 @@ def figure_3(data_lambda1, dir_name, normalizer):
     ax1.set_ylim(700, 1100)  # outliers only
     ax2.set_ylim(0, 35)  # most of the data
 
+    ax2.tick_params(axis="x",direction="in", pad=-70)
     # hide the spines between ax and ax2
     ax1.spines.bottom.set_visible(False)
-    ax2.spines.top.set_visible(False)
-    ax1.xaxis.tick_top()
-    ax1.tick_params(labeltop=False)  # don't put tick labels at the top
-    ax2.xaxis.tick_bottom()
+    ax1.tick_params(bottom=False, top=False)
 
     d = .5  # proportion of vertical to horizontal extent of the slanted line
     kwargs = dict(marker=[(-1, -d), (1, d)], markersize=6,
@@ -244,9 +266,10 @@ def figure_3(data_lambda1, dir_name, normalizer):
 
     plt.xticks(x, methods)
     plt.axhline(y=1.0, color="r", alpha=0.2, linestyle="-", zorder=-12)
-    plt.ylabel("Normalized L1 error")
+    plt.ylabel("Normalized L1 error", fontsize=18)
+    plt.xlabel("Methods", fontsize=18)
     plt.xticks(rotation = 90) # Rotates X-Axis Ticks by 45-degrees
-    plt.savefig(f"{dir_name}/plot3_.pdf")
+    plt.savefig(f"{dir_name}/approximation_quality.pdf", bbox_inches='tight')
 
 
 if __name__ == "__main__":
