@@ -1,15 +1,15 @@
 import math
 
 import torch
-from hesscale import HesScaleLM
+from hesscale import HesScaleGGN
 from torch import abs
 from torch import max as tor_max
 from torch import zeros_like
 from torch.optim import Optimizer
 
 
-class HesScaleLMOptimizer(Optimizer):
-    method = HesScaleLM()
+class HesScaleGGNOptimizer(Optimizer):
+    method = HesScaleGGN()
 
     def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
         if not 0.0 <= lr:
@@ -23,7 +23,7 @@ class HesScaleLMOptimizer(Optimizer):
         defaults = dict(
             lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield
         )
-        super(HesScaleLMOptimizer, self).__init__(params, defaults)
+        super(HesScaleGGNOptimizer, self).__init__(params, defaults)
 
     def step(self):
         for group in self.param_groups:

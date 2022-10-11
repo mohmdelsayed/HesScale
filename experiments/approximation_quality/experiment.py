@@ -6,7 +6,7 @@ from backpack import backpack, extend
 from backpack.extensions import DiagGGNExact, DiagGGNMC, DiagHessian, KFAC
 from experiments.approximation_quality.data_generator import TargetGenerator
 from experiments.approximation_quality.act_func import activation_func
-from hesscale import HesScale, HesScaleLM
+from hesscale import HesScale, HesScaleGGN
 from torch.optim import SGD
 
 DiagGGNMC_1 = DiagGGNMC(mc_samples=1)
@@ -24,7 +24,7 @@ methods = {
     "AdaHess_50": None,
 
     "GGN": "diag_ggn_exact",
-    "HSLM": "hesscale_lm",
+    "HSGGN": "hesscale_ggn",
     "GGNMC_1": "diag_ggn_mc_1",
     "GGNMC_50": "diag_ggn_mc_50",
     "KFAC_1": None,
@@ -157,7 +157,7 @@ class HessApprox(nn.Module):
             KFAC_1,
             KFAC_50,
             HesScale(),
-            HesScaleLM(),
+            HesScaleGGN(),
             DiagGGNExact(),
             DiagHessian(),
         ):

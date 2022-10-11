@@ -1,5 +1,5 @@
 import torch
-from hesscale import HesScaleLM
+from hesscale import HesScaleGGN
 from backpack import backpack, extend
 
 
@@ -32,13 +32,13 @@ def example():
         optimizer.zero_grad()
         loss = loss_func(prediction, target_class)
 
-        with backpack(HesScaleLM()):
+        with backpack(HesScaleGGN()):
             loss.backward()
 
         optimizer.step()
 
         for (name, param) in model.named_parameters():
-            print(name, param.hesscale_lm.shape)
+            print(name, param.hesscale_ggn.shape)
 
 
 if __name__ == "__main__":

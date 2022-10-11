@@ -1,5 +1,5 @@
 from hesscale.hesscale_base import BaseModuleHesScale
-from hesscale.utils import conv_lm as convUtils
+from hesscale.utils import conv_ggn as convUtils
 
 
 class HesScaleConvND(BaseModuleHesScale):

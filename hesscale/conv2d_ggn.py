@@ -1,5 +1,5 @@
-from hesscale.derivatives_lm import Conv2DDerivativesHesScale
-from hesscale.convnd_lm import HesScaleConvND
+from hesscale.derivatives_ggn import Conv2DDerivativesHesScale
+from hesscale.convnd_ggn import HesScaleConvND
 
 
 class HesScaleConv2d(HesScaleConvND):
