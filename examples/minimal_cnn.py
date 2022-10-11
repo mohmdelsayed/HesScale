@@ -1,7 +1,7 @@
-from backpack import backpack, extend
-from hesscale import HesScale
-import torch.nn as nn
 import torch
+from backpack import backpack, extend
+from hesscale_optimizers import AdaHesScale, AdaHesScaleGGN
+
 
 n_obs = (512, 512)
 n_channels = 3
@@ -11,31 +11,23 @@ nhidden = 8
 lr = 0.0004
 T = 1
 
-model = nn.Sequential(
-    nn.Conv2d(n_channels, nhidden, 5),
-    nn.ReLU(),
-    nn.MaxPool2d(2, 2),
-    nn.Conv2d(nhidden, nhidden, 5),
-    nn.ReLU(),
-    nn.MaxPool2d(2, 2),
-    nn.Conv2d(nhidden, nhidden, 5),
-    nn.ReLU(),
-    nn.MaxPool2d(2, 2),
-    nn.Conv2d(nhidden, nhidden, 5),
-    nn.ReLU(),
-    nn.MaxPool2d(2, 2),
-    nn.Conv2d(nhidden, nhidden, 5),
-    nn.ReLU(),
-    nn.MaxPool2d(2, 2),
-    nn.Conv2d(nhidden, nhidden, 5),
-    nn.ReLU(),
-    nn.MaxPool2d(2, 2),
-    nn.Flatten(),
-    nn.Linear(128, n_classes),
+model = torch.nn.Sequential(
+    torch.nn.Conv2d(n_channels, nhidden, 2),
+    torch.nn.ReLU(),
+    torch.nn.MaxPool2d(8, 8),
+    torch.nn.Conv2d(nhidden, nhidden, 2),
+    torch.nn.ReLU(),
+    torch.nn.AvgPool2d(8, 8),
+    torch.nn.Flatten(),
+    torch.nn.Linear(392, n_classes),
 )
 
-loss_func = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+
+loss_func = torch.nn.CrossEntropyLoss()
+optimizer = AdaHesScale(model.parameters(), lr=lr)
+# optimizer = AdaHesScaleGGN(model.parameters(), lr=lr)
+
+savefield = optimizer.method.savefield
 
 extend(model)
 extend(loss_func)
@@ -48,10 +40,11 @@ for i in range(T):
     optimizer.zero_grad()
     loss = loss_func(prediction, target_class)
 
-    with backpack(HesScale()):
+    with backpack(optimizer.method):
         loss.backward()
 
     optimizer.step()
 
-    for (name, param) in model.named_parameters():
-        print(name, param.hesscale.shape)
+    for (name, param) in model.named_parameters():       
+        print('g:', name, getattr(param, 'grad').shape) 
+        print('h:', name, getattr(param, savefield).shape)
