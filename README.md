@@ -21,8 +21,8 @@ We added a couple of minimal examples in the `examples` directory for easier und
 ```python
 #!/usr/bin/env python3
 import torch
-from hesscale import HesScale
 from backpack import backpack, extend
+from hesscale_optimizers import AdaHesScale
 
 hidden_units = 128
 n_obs = 6
@@ -31,13 +31,15 @@ lr = 0.0004
 batch_size = 1
 
 model = torch.nn.Sequential(
-    torch.nn.Linear(6, 128),
+    torch.nn.Linear(n_obs, hidden_units),
+    torch.nn.Sigmoid(),
+    torch.nn.Linear(hidden_units, hidden_units),
     torch.nn.Tanh(),
-    torch.nn.Linear(128, 10),
+    torch.nn.Linear(hidden_units, n_classes),
 )
-
 loss_func = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+optimizer = AdaHesScale(model.parameters(), lr=lr)
+savefield = optimizer.method.savefield
 
 extend(model)
 extend(loss_func)
@@ -49,13 +51,11 @@ prediction = model(inputs)
 optimizer.zero_grad()
 loss = loss_func(prediction, target_class)
 
-with backpack(HesScale()):
+with backpack(optimizer.method):
     loss.backward()
 
 optimizer.step()
 
-for (name, param) in model.named_parameters():
-    print(name, param.hesscale.shape)
 ```
 
 ## Contributing
