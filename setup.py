@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="HesScale",
     version="1.0.0",
-    description="A scalable method of computing Hessian diagonals",
+    description="HesScale: Scalable Computation of Hessian Diagonals",
     url="https://github.com/mohmdelsayed",
     author="Mohamed Elsayed",
     author_email="mohamedelsayed@ualberta.ca",
