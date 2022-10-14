@@ -19,10 +19,9 @@ pip install .
 ## Run a minimal example:
 We added a couple of minimal examples in the `examples` directory for easier understanding of how to use this package. Here is a minimal example:
 ```python
-#!/usr/bin/env python3
 import torch
 from backpack import backpack, extend
-from hesscale_optimizers import AdaHesScale
+from optimizers.adahesscale import AdaHesScale
 
 hidden_units = 128
 n_obs = 6
