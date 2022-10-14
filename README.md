@@ -1,7 +1,7 @@
 # HesScale: Scalable Computation of Hessian Diagonals
 
 
-HesScale is build on top of Pytorch and BackPack. It allows for Hessian diagonals to backpropagate through the layers of the network.
+HesScale is built on top of Pytorch and BackPack. It allows for Hessian diagonals to backpropagate through the layers of the network.
 
 ## Installation:
 #### 1. You need to have environemnt with python 3.7:
