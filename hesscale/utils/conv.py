@@ -2,7 +2,7 @@ import torch
 from einops import rearrange
 from torch import einsum
 from torch.nn.functional import conv1d, conv2d, conv3d, unfold
-from hesscale.derivatives import LOSS, ACTIVATION, LINEAR, CONV
+from hesscale.core.derivatives import LOSS, ACTIVATION, LINEAR, CONV
 
 
 def unfold_input(module, input):

@@ -1,4 +1,4 @@
-from hesscale.hesscale_base import BaseModuleHesScale
+from hesscale.core.hesscale_base import BaseModuleHesScale
 from hesscale.utils import conv_ggn as convUtils
 
 

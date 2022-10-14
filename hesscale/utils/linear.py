@@ -1,5 +1,5 @@
 from torch import einsum
-from hesscale.derivatives import LOSS, LINEAR, CONV, ACTIVATION
+from hesscale.core.derivatives import LOSS, LINEAR, CONV, ACTIVATION
 
 
 def extract_weight_diagonal(module, backproped, sum_batch=True):

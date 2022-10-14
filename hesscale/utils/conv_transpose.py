@@ -5,7 +5,7 @@ from einops import rearrange
 from torch import einsum
 from torch.nn.functional import conv_transpose1d, conv_transpose2d, conv_transpose3d
 from hesscale.utils.conv import unfold_input
-from hesscale.derivatives import LOSS, ACTIVATION, LINEAR, CONV
+from hesscale.core.derivatives import LOSS, ACTIVATION, LINEAR, CONV
 
 
 def get_weight_gradient_factors(input, grad_out, module, N):

@@ -30,7 +30,7 @@ from torch.nn import (
     Softmax,
 )
 
-from . import (
+from .core import (
     activations,
     activations_ggn,
     conv1d,

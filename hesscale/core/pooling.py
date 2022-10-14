@@ -1,5 +1,5 @@
-from hesscale.hesscale_base import BaseModuleHesScale
-from hesscale.derivatives import (
+from hesscale.core.hesscale_base import BaseModuleHesScale
+from hesscale.core.derivatives import (
     AvgPool1DDerivativesHesScale,
     AvgPool2DDerivativesHesScale,
     AvgPool3DDerivativesHesScale,

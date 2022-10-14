@@ -1,5 +1,5 @@
-from hesscale.hesscale_base import BaseModuleHesScale
-from hesscale.derivatives_ggn import FlattenDerivativesHesScale
+from hesscale.core.hesscale_base import BaseModuleHesScale
+from hesscale.core.derivatives_ggn import FlattenDerivativesHesScale
 
 
 class HesScaleFlatten(BaseModuleHesScale):

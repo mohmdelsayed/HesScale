@@ -1,5 +1,5 @@
-from hesscale.derivatives_ggn import DropoutDerivativesHesScale
-from hesscale.hesscale_base import BaseModuleHesScale
+from hesscale.core.derivatives_ggn import DropoutDerivativesHesScale
+from hesscale.core.hesscale_base import BaseModuleHesScale
 
 
 class HesScaleDropout(BaseModuleHesScale):

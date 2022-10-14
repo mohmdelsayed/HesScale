@@ -1,4 +1,4 @@
-from hesscale.derivatives import LINEAR, CONV, LOSS, ACTIVATION
+from hesscale.core.derivatives import LINEAR, CONV, LOSS, ACTIVATION
 import warnings
 
 
