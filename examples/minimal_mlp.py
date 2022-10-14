@@ -1,6 +1,7 @@
 import torch
 from backpack import backpack, extend
-from hesscale_optimizers import AdaHesScale, AdaHesScaleGGN
+from optimizers.adahesscale import AdaHesScale
+# from optimizers.adahesscaleggn import AdaHesScaleGGN
 
 
 hidden_units = 128
