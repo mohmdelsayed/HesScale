@@ -1,4 +1,4 @@
-from .derivatives_ggn import (
+from .derivatives_gn import (
     ELUDerivativesHesScale,
     LeakyReLUDerivativesHesScale,
     LogSigmoidDerivativesHesScale,

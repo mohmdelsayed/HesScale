@@ -1,8 +1,8 @@
 from hesscale.core.hesscale_base import BaseModuleHesScale
-from hesscale.utils import conv_transpose_ggn as convUtils
+from hesscale.utils import conv_gn as convUtils
 
 
-class HesScaleConvTransposeND(BaseModuleHesScale):
+class HesScaleConvND(BaseModuleHesScale):
     def bias(self, ext, module, grad_inp, grad_out, backproped):
         return convUtils.extract_bias_diagonal(module, backproped, sum_batch=True)
 

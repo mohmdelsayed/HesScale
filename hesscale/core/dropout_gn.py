@@ -1,4 +1,4 @@
-from hesscale.core.derivatives_ggn import DropoutDerivativesHesScale
+from hesscale.core.derivatives_gn import DropoutDerivativesHesScale
 from hesscale.core.hesscale_base import BaseModuleHesScale
 
 

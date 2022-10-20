@@ -1,7 +1,7 @@
 import torch
 from backpack import backpack, extend
 from optimizers.adahesscale import AdaHesScale
-# from optimizers.adahesscaleggn import AdaHesScaleGGN
+# from optimizers.adahesscalegn import AdaHesScaleGN
 
 
 hidden_units = 128
@@ -20,7 +20,7 @@ model = torch.nn.Sequential(
 )
 loss_func = torch.nn.CrossEntropyLoss()
 optimizer = AdaHesScale(model.parameters(), lr=lr)
-# optimizer = AdaHesScaleGGN(model.parameters(), lr=lr)
+# optimizer = AdaHesScaleGN(model.parameters(), lr=lr)
 
 savefield = optimizer.method.savefield
 

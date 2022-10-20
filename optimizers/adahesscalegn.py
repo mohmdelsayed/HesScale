@@ -1,14 +1,14 @@
 import math
 
-from hesscale import HesScaleGGN
+from hesscale import HesScaleGN
 from torch import zeros_like
 from torch.optim import Optimizer
 
-class AdaHesScaleGGN(Optimizer):
-    method = HesScaleGGN()
+class AdaHesScaleGN(Optimizer):
+    method = HesScaleGN()
 
     def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
-        self.method = HesScaleGGN()
+        self.method = HesScaleGN()
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -20,7 +20,7 @@ class AdaHesScaleGGN(Optimizer):
         defaults = dict(
             lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield
         )
-        super(AdaHesScaleGGN, self).__init__(params, defaults)
+        super(AdaHesScaleGN, self).__init__(params, defaults)
 
     def step(self):
         for group in self.param_groups:

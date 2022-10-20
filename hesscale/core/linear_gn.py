@@ -1,9 +1,9 @@
 from torch import einsum
 
-from .derivatives_ggn import LinearDerivativesHesScale
+from .derivatives_gn import LinearDerivativesHesScale
 from .hesscale_base import BaseModuleHesScale
 
-import hesscale.utils.linear_ggn as LinUtils
+import hesscale.utils.linear_gn as LinUtils
 
 
 class LinearHesScale(BaseModuleHesScale):

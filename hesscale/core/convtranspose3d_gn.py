@@ -1,5 +1,5 @@
-from hesscale.core.derivatives_ggn import ConvTranspose3DDerivativesHesScale
-from hesscale.core.convtransposend_ggn import HesScaleConvTransposeND
+from hesscale.core.derivatives_gn import ConvTranspose3DDerivativesHesScale
+from hesscale.core.convtransposend_gn import HesScaleConvTransposeND
 
 
 class HesScaleConvTranspose3d(HesScaleConvTransposeND):
