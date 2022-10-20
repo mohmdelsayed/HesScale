@@ -8,4 +8,5 @@ setup(
     author="Mohamed Elsayed",
     author_email="mohamedelsayed@ualberta.ca",
     packages=find_packages(exclude=["tests*"]),
+    install_requires=['backpack-for-pytorch==1.3.0'],
 )

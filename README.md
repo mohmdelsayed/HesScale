@@ -12,7 +12,6 @@ source .hesscale/bin/activate
 #### 2. Install Dependencies:
 ```sh
 python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
 pip install .
 ```
 
