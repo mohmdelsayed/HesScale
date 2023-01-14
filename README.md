@@ -67,11 +67,5 @@ To reproduce the experiments in the paper, you run the scripts in `experiemnts` 
 ## How to cite
 If you use our code, please consider citing our paper too.
 ```
-@inproceedings{elsayed2022hesscale,
-    title     = {HesScale: Scalable Computation of Hessian Diagonals,
-    author    = {Mohamed Elsayed and A. Rupam Mahmood},
-    booktitle = {},
-    url       = {},
-    year      = {2022}
-}
+Elsayed, M., & Mahmood, A. R. (2022). HesScale: Scalable Computation of Hessian Diagonals. *arXiv preprint arXiv:2210.11639*.
 ```
