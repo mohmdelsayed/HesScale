@@ -1,16 +1,14 @@
-from backpack.core.derivatives import (
-    CrossEntropyLossDerivatives,
-    ELUDerivatives,
-    LeakyReLUDerivatives,
-    LinearDerivatives,
-    LogSigmoidDerivatives,
-    MSELossDerivatives,
-    ReLUDerivatives,
-    SELUDerivatives,
-    SigmoidDerivatives,
-    TanhDerivatives,
-    DropoutDerivatives,
-)
+from backpack.core.derivatives.crossentropyloss import CrossEntropyLossDerivatives
+from backpack.core.derivatives.elu import ELUDerivatives
+from backpack.core.derivatives.leakyrelu import LeakyReLUDerivatives
+from backpack.core.derivatives.linear import LinearDerivatives
+from backpack.core.derivatives.logsigmoid import LogSigmoidDerivatives
+from backpack.core.derivatives.mseloss import MSELossDerivatives
+from backpack.core.derivatives.relu import ReLUDerivatives
+from backpack.core.derivatives.selu import SELUDerivatives
+from backpack.core.derivatives.sigmoid import SigmoidDerivatives
+from backpack.core.derivatives.tanh import TanhDerivatives
+from backpack.core.derivatives.dropout import DropoutDerivatives
 from backpack.core.derivatives.elementwise import ElementwiseDerivatives
 from torch import einsum, ones, zeros, zeros_like, cos, ones_like, sin, flip
 from torch.nn.functional import softmax
@@ -357,7 +355,6 @@ class BaseActivationDerivatives(ElementwiseDerivatives):
         super().__init__()
 
     def diag_hessian(self, module, g_inp, g_out, mat):
-        self._no_inplace(module)
         if len(g_inp[0].size()) == 4:
             equation = "mnop, ...mnop->...mnop"
         elif len(g_inp[0].size()) == 2:

@@ -1,4 +1,4 @@
-from backpack.extensions.backprop_extension import BackpropExtension
+from backpack.extensions.secondorder.base import SecondOrderBackpropExtension
 from torch.nn import (
     ELU,
     SELU,
@@ -58,10 +58,10 @@ from .core import (
 )
 
 
-class HesScale(BackpropExtension):
-    def __init__(self, savefield="hesscale"):
+class HesScale(SecondOrderBackpropExtension):
+    def __init__(self):
         super().__init__(
-            savefield=savefield,
+            savefield="hesscale",
             fail_mode="ERROR",
             module_exts={
                 MSELoss: losses.MSELossHesScale(),
@@ -95,7 +95,7 @@ class HesScale(BackpropExtension):
         )
 
 
-class HesScaleGN(BackpropExtension):
+class HesScaleGN(SecondOrderBackpropExtension):
     def __init__(self, savefield="hesscale_gn"):
         super().__init__(
             savefield=savefield,
