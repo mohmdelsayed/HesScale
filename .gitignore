@@ -136,3 +136,5 @@ dmypy.json
 *.pkl
 *.npy
 .gitignore
+generated_cmds/
+logs/
