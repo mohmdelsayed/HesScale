@@ -4,11 +4,15 @@ import torch
 import torch.nn as nn
 from backpack import backpack, extend
 from backpack.extensions import DiagGGNExact, DiagGGNMC, DiagHessian, KFAC
-from experiments.approximation_quality.data_generator import TargetGenerator
-from experiments.approximation_quality.act_func import activation_func
 from hesscale import HesScale, HesScaleGN
 from torch.optim import SGD
 import torchvision
+
+activation_func = {
+    "tanh": torch.nn.Tanh,
+    "relu": torch.nn.ReLU,
+    "sigmoid": torch.nn.Sigmoid,
+}
 
 DiagGGNMC_1 = DiagGGNMC(mc_samples=1)
 DiagGGNMC_1.savefield = "diag_ggn_mc_1"
@@ -49,7 +53,6 @@ class HessQualityExperiment:
 
         self.dataset_size = configs["data_generator_params"]["dataset_size"]
         self.batch_size = configs["data_generator_params"]["batch_size"]
-        self.data_generator = TargetGenerator(**configs["data_generator_params"])
         self.approximator = HessApprox(
             n_classes=configs["data_generator_params"]["out_size"],
             network_shape=configs["predictor_params"]["network_hidden_units"],
@@ -58,11 +61,9 @@ class HessQualityExperiment:
             lr=configs["lr"],
         )
 
-    def train(self, lamda=1.0):
+    def train(self):
 
         avgs_lists = {}
-
-        # inputs, labels = self.data_generator.get_dataset(dataset_size=self.dataset_size)
 
         trainset = torchvision.datasets.MNIST('mnist/', train=True, download=True,
                                     transform=torchvision.transforms.Compose([
@@ -76,16 +77,10 @@ class HessQualityExperiment:
 
         train_loader = torch.utils.data.DataLoader(trainset_sub, batch_size=self.batch_size, shuffle=True)
 
-
-        # print(inputs.shape, labels.shape)
-        # for (inp, label) in self.iterate_minibatches(
-        #     inputs, labels, batchsize=self.batch_size
-        # ):
-
         for i, (inp, label) in enumerate(train_loader):
 
             sample_error_per_method = self.approximator.compare_hess_methods(
-                inp, label, lamda=lamda
+                inp, label
             )
             print("Element", i)
     
@@ -161,9 +156,8 @@ class HessApprox(nn.Module):
             lr=lr,
         )
 
-    def compare_hess_methods(self, state, label, lamda=1.0):
+    def compare_hess_methods(self, state, label):
 
-        # state = torch.from_numpy(state).float()
         label = torch.tensor(label).long()
         state = torch.flatten(state, start_dim=1)
 
@@ -216,46 +210,43 @@ class HessApprox(nn.Module):
                     )
                 elif method == "g2":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * param.grad.data ** 2)
+                        torch.abs(exact_h_diagonals - param.grad.data ** 2)
                         .sum()
                         .item()
                     )
                 elif method == "KFAC_1":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * kfac_estimate_1.data)
+                        torch.abs(exact_h_diagonals - kfac_estimate_1.data)
                         .sum()
                         .item()
                     )
                 elif method == "KFAC_50":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * kfac_estimate_50.data)
+                        torch.abs(exact_h_diagonals - kfac_estimate_50.data)
                         .sum()
                         .item()
                     )
                 elif method == "AdaHess_50":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * adahess_diag_50.data)
+                        torch.abs(exact_h_diagonals - adahess_diag_50.data)
                         .sum()
                         .item()
                     )
                 elif method == "AdaHess_1":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * adahess_diag_1.data)
+                        torch.abs(exact_h_diagonals - adahess_diag_1.data)
                         .sum()
                         .item()
                     )
                 elif method == "BL89":
                     summed_errors[method][name] = (
-                        torch.abs(exact_h_diagonals - lamda * param_soft.hesscale.data)
+                        torch.abs(exact_h_diagonals - param_soft.hesscale.data)
                         .sum()
                         .item()
                     )
                 else:
                     summed_errors[method][name] = (
-                        torch.abs(
-                            exact_h_diagonals
-                            - lamda * getattr(param, methods[method]).data
-                        )
+                        torch.abs(exact_h_diagonals - getattr(param, methods[method]).data)
                         .sum()
                         .item()
                     )
@@ -390,11 +381,3 @@ class HessApprox(nn.Module):
             kfac1, kfac2 = curv_p
             mtx = torch.kron(kfac1, kfac2)
             return torch.diagonal(mtx, 0).view_as(param)
-
-
-def linear_counter(network):
-    counter = 0
-    for layer in network:
-        if layer.__class__ == torch.nn.modules.linear.Linear:
-            counter += 1
-    return counter

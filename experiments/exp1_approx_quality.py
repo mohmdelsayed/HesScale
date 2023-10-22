@@ -22,10 +22,10 @@ warnings.filterwarnings("ignore")
 
 
 @unpack
-def run(configs, seed, lamda):
+def run(configs, seed):
     experiment = HessQualityExperiment(configs, seed)
     # print(f"Started run with seed: {experiment.seed}")
-    return experiment.train(lamda)
+    return experiment.train()
 
 
 def main():
@@ -33,7 +33,6 @@ def main():
     dir_name = "data/ex_approx_quality"
     configs_dir = "experiments/approximation_quality/configs"
     file_name = "data_lambdas"
-    lamda_range = [1.0]  # list(np.arange(-4, 6) * 0.125 + 0.5)
     normalizer = "HS"
 
     data_lambdas = {}
@@ -46,21 +45,16 @@ def main():
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
         randomlist = random.sample(range(0, 99999), n_seeds)
-        for lamda in lamda_range:
-            pool = Pool(configs["n_processes"])
-            results = pool.map(run, [(configs, seed, lamda) for seed in randomlist])
-            pool.close()
-            pool.join()
-            data_lambdas[lamda] = results
+        pool = Pool(configs["n_processes"])
+        results = pool.map(run, [(configs, seed) for seed in randomlist])
+        pool.close()
+        pool.join()
 
         with open(f"{dir_name}/{file_name}.pkl", "wb") as f:
-            pickle.dump(data_lambdas, f)
+            pickle.dump(results, f)
     else:
         with open(f"{dir_name}/{file_name}.pkl", "rb") as f:
-            data_lambdas = pickle.load(f)
-
-        # with open(f"{dir_name}/{file_name}_last.pkl", "rb") as f:
-        #     data_lambdas2 = pickle.load(f)
+            results = pickle.load(f)
 
     colors = [
         'tab:green',
@@ -83,63 +77,11 @@ def main():
         "#556B2F", #darkolivegreen
     ]
 
-    # figure_1(lamda_range, data_lambdas, n_seeds, dir_name, colors)
-    # figure_2(data_lambdas[1]+data_lambdas2[1], dir_name, colors)
-    # figure_3(data_lambdas[1] + data_lambdas2[1], dir_name, normalizer, colors)
-    figure_2(data_lambdas[1], dir_name, colors)
-    figure_3(data_lambdas[1], dir_name, normalizer, colors)
+    layerwise_error(results, dir_name, colors)
+    overall_error(results, dir_name, normalizer, colors)
 
 
-def figure_1(lamda_range, data_lambdas, n_seeds, dir_name, colors):
-    # Figure 1: plot the summed errors over the number of samples per each method
-    for lamda, color in zip(lamda_range, colors):
-        data = {}
-        for result in data_lambdas[lamda]:
-            for method in result:
-                sums = np.zeros_like(result[method][list(result[method].keys())[0]])
-
-                for name in result[method]:
-                    sums += result[method][name]
-
-                if method in data:
-                    data[method].append(sums)
-                else:
-                    data[method] = [sums]
-
-        # per each method, compute bar means and std errors
-        bar_means, bar_stds = [], []
-        methods = data.keys()
-
-        for method in data:
-            bar_means.append(np.asarray(data[method]).mean(axis=1).mean(axis=0))
-            bar_stds.append(np.asarray(data[method]).mean(axis=1).std())
-
-        # save data for lambda=1 in a seperate variable, then plot bars for lambda=1
-        if lamda == 1.0:
-            plt.bar(
-                methods,
-                bar_means,
-                yerr=bar_stds / (np.sqrt(n_seeds) * 2),
-                color="gray",
-            )
-
-        # plot connected points for each lambda
-        plt.plot(
-            methods,
-            bar_means,
-            linewidth=0.8,
-            color=color,
-        )
-        plt.title("Quality of Diagonal Hessian Approximations")
-        plt.yscale("log")
-        plt.ylabel("L1 Error")
-
-    plt.legend(["λ = {}".format(lamda_i) for lamda_i in lamda_range])
-    plt.savefig(f"{dir_name}/plot1.pdf")
-    plt.clf()
-
-
-def figure_2(data_lamda1, dir_name, colors):
+def layerwise_error(data_lamda1, dir_name, colors):
     # Figure 2: compute sum errors over the number of samples per each method per each layer
     errors_per_method_per_layer = {}
     methods = data_lamda1[0].keys()
@@ -183,7 +125,7 @@ def figure_2(data_lamda1, dir_name, colors):
     plt.clf()
 
 
-def figure_3(data_lambda1, dir_name, normalizer, colors_tab):
+def overall_error(data_lambda1, dir_name, normalizer, colors_tab):
 
     # Figure 3: Compute total L1 distance normalized by HesScale
     w = 0.8  # bar width
