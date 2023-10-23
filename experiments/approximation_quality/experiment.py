@@ -7,6 +7,7 @@ from backpack.extensions import DiagGGNExact, DiagGGNMC, DiagHessian, KFAC
 from hesscale import HesScale, HesScaleGN
 from torch.optim import SGD
 import torchvision
+from utils import get_kfac_estimate, get_adahess_estimate
 
 activation_func = {
     "tanh": torch.nn.Tanh,
@@ -26,14 +27,14 @@ methods = {
     "HS": "hesscale",
     "BL89": None,
     "AdaHess_1": None,
-    "AdaHess_50": None,
+    # "AdaHess_50": None,
 
-    "GGN": "diag_ggn_exact",
+    # "GGN": "diag_ggn_exact",
     "HSGGN": "hesscale_gn",
     "GGNMC_1": "diag_ggn_mc_1",
-    "GGNMC_50": "diag_ggn_mc_50",
+    # "GGNMC_50": "diag_ggn_mc_50",
     "KFAC_1": None,
-    "KFAC_50": None,
+    # "KFAC_50": None,
     "g2": None,
     "H": "diag_h",
     "|H|": None,
@@ -65,7 +66,7 @@ class HessQualityExperiment:
 
         avgs_lists = {}
 
-        trainset = torchvision.datasets.MNIST('mnist/', train=True, download=True,
+        trainset = torchvision.datasets.MNIST('dataset/', train=True, download=True,
                                     transform=torchvision.transforms.Compose([
                                     torchvision.transforms.ToTensor(),
                                     torchvision.transforms.Normalize(
@@ -75,16 +76,23 @@ class HessQualityExperiment:
         indx = list(range(self.dataset_size))
         trainset_sub = torch.utils.data.Subset(trainset, indx)
 
-        train_loader = torch.utils.data.DataLoader(trainset_sub, batch_size=self.batch_size, shuffle=True)
+        train_loader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True)
+        train_loader_ = torch.utils.data.DataLoader(trainset_sub, batch_size=self.batch_size, shuffle=True)
 
+        # train on full dataset twice
         for i, (inp, label) in enumerate(train_loader):
+            loss = self.approximator.learn(inp, label)
+        for i, (inp, label) in enumerate(train_loader):
+            loss = self.approximator.learn(inp, label)
+
+        for i, (inp, label) in enumerate(train_loader_):
 
             sample_error_per_method = self.approximator.compare_hess_methods(
                 inp, label
             )
             print("Element", i)
     
-            self.approximator.learn(inp, label)
+            # self.approximator.learn(inp, label)
 
             if not avgs_lists:
                 avgs_lists = sample_error_per_method.copy()
@@ -102,20 +110,6 @@ class HessQualityExperiment:
                             )
 
         return avgs_lists
-
-    def iterate_minibatches(self, inputs, targets, batchsize, shuffle=False):
-        assert inputs.shape[0] == targets.shape[0]
-        if shuffle:
-            indices = np.arange(inputs.shape[0])
-            np.random.shuffle(indices)
-        for start_idx in range(0, inputs.shape[0], batchsize):
-            end_idx = min(start_idx + batchsize, inputs.shape[0])
-            if shuffle:
-                excerpt = indices[start_idx:end_idx]
-            else:
-                excerpt = slice(start_idx, end_idx)
-            yield inputs[excerpt], targets[excerpt]
-
 
 class HessApprox(nn.Module):
     def __init__(
@@ -177,10 +171,10 @@ class HessApprox(nn.Module):
         ):
             loss.backward(create_graph=True)
 
-        adahess_diags_1 = self.get_adahess_estimate(
+        adahess_diags_1 = get_adahess_estimate(
             self.model.parameters(), mc_samples=1
         )
-        adahess_diags_50 = self.get_adahess_estimate(
+        adahess_diags_50 = get_adahess_estimate(
             self.model.parameters(), mc_samples=50
         )
 
@@ -200,8 +194,8 @@ class HessApprox(nn.Module):
             adahess_diags_50
         ):
             exact_h_diagonals = param.diag_h.data.data
-            kfac_estimate_1 = self.get_kfac_estimate(param.kfac_1, param)
-            kfac_estimate_50 = self.get_kfac_estimate(param.kfac_50, param)
+            kfac_estimate_1 = get_kfac_estimate(param.kfac_1, param)
+            kfac_estimate_50 = get_kfac_estimate(param.kfac_50, param)
 
             for method in methods:
                 if method == "|H|":
@@ -269,6 +263,7 @@ class HessApprox(nn.Module):
 
         self.optimizer.step()
         self.optimizer_softmax.step()
+        return loss
 
     def create_network(self, n_obs, network_shape, n_classes, act):
         network = []
@@ -284,100 +279,3 @@ class HessApprox(nn.Module):
             index += 1
         network.pop(-1)
         return torch.nn.Sequential(*network)
-
-    def get_adahess_estimate(self, model_parameters, mc_samples=1):
-        """
-        compute the Hessian vector product with a random vector v, at the current gradient point,
-        i.e., compute the gradient of <gradsH,v>.
-        :param gradsH: a list of torch variables
-        :return: a list of torch tensors
-        """
-
-        params = []
-        grads = []
-        for p in model_parameters:
-            if p.grad is not None:
-                params.append(p)
-                grads.append(p.grad)
-
-        self.single_gpu = True
-
-        # Check backward was called with create_graph set to True
-        for i, grad in enumerate(grads):
-            if grad.grad_fn is None:
-                raise RuntimeError(
-                    "Gradient tensor {:} does not have grad_fn. When calling\n".format(
-                        i
-                    )
-                    + "\t\t\t  loss.backward(), make sure the option create_graph is\n"
-                    + "\t\t\t  set to True."
-                )
-
-        hvs_sum = None
-        for _ in range(mc_samples):
-
-            v = [2 * torch.randint_like(p, high=2) - 1 for p in params]
-
-            # this is for distributed setting with single node and multi-gpus,
-            # for multi nodes setting, we have not support it yet.
-            if not self.single_gpu:
-                for v1 in v:
-                    dist.all_reduce(v1)
-            if not self.single_gpu:
-                for v_i in v:
-                    v_i[v_i < 0.0] = -1.0
-                    v_i[v_i >= 0.0] = 1.0
-
-            if hvs_sum is None:
-                hvs_sum = [
-                    x * (1 / mc_samples)
-                    for x in torch.autograd.grad(
-                        grads,
-                        params,
-                        grad_outputs=v,
-                        only_inputs=True,
-                        retain_graph=True,
-                    )
-                ]
-            else:
-                hvs_sum += [
-                    x * (1 / mc_samples)
-                    for x in torch.autograd.grad(
-                        grads,
-                        params,
-                        grad_outputs=v,
-                        only_inputs=True,
-                        retain_graph=True,
-                    )
-                ]
-
-        hutchinson_trace = []
-        for hv in hvs_sum:
-            param_size = hv.size()
-            if len(param_size) <= 2:  # for 0/1/2D tensor
-                # Hessian diagonal block size is 1 here.
-                # We use that torch.abs(hv * vi) = hv.abs()
-                tmp_output = hv.abs()
-
-            elif len(param_size) == 4:  # Conv kernel
-                # Hessian diagonal block size is 9 here: torch.sum() reduces the dim 2/3.
-                # We use that torch.abs(hv * vi) = hv.abs()
-                tmp_output = torch.mean(hv.abs(), dim=[2, 3], keepdim=True)
-            hutchinson_trace.append(tmp_output)
-
-        # this is for distributed setting with single node and multi-gpus,
-        # for multi nodes setting, we have not support it yet.
-        if not self.single_gpu:
-            for output1 in hutchinson_trace:
-                dist.all_reduce(output1 / torch.cuda.device_count())
-
-        return hutchinson_trace
-
-    def get_kfac_estimate(self, curv_p, param):
-        if len(curv_p) == 1:
-            kfac = curv_p[0]
-            return torch.diagonal(kfac, 0)
-        else:
-            kfac1, kfac2 = curv_p
-            mtx = torch.kron(kfac1, kfac2)
-            return torch.diagonal(mtx, 0).view_as(param)

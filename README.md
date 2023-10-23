@@ -15,6 +15,23 @@ python -m pip install --upgrade pip
 pip install .
 ```
 
+## Run an optimization experiment:
+You need to create a task in `core/task` and write how to run in in `core/run`. You can also add new optimizers in `core/learner` or networks in `core/netowrk`. After that, you can create your experiment script in `experiments/` that specify the task, compared learners, grid search and how to run the task. Here is an example:
+
+```python
+python ex1_stationary_mnist.py 
+```
+
+which will generate a `generated_cmds` directory containing text files that has the python cmds need to be run. In addition, there will be a script generated automatically for running on compute canada.
+
+
+## Run an optimization experiment:
+You can run 
+
+```python
+python experiments/approximation_quality/run.py 
+```
+
 ## Run a minimal example:
 We added a couple of minimal examples in the `examples` directory for easier understanding of how to use this package. Here is a minimal example:
 ```python

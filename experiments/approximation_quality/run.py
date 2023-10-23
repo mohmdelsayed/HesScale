@@ -30,12 +30,11 @@ def run(configs, seed):
 
 def main():
 
-    dir_name = "data/ex_approx_quality"
+    dir_name = "ex_approx_quality"
     configs_dir = "experiments/approximation_quality/configs"
-    file_name = "data_lambdas"
+    file_name = "data"
     normalizer = "HS"
 
-    data_lambdas = {}
     with open(f"{configs_dir}/configs.yaml") as file:
         configs = yaml.full_load(file)
 
@@ -82,7 +81,6 @@ def main():
 
 
 def layerwise_error(data_lamda1, dir_name, colors):
-    # Figure 2: compute sum errors over the number of samples per each method per each layer
     errors_per_method_per_layer = {}
     methods = data_lamda1[0].keys()
     for i, result in enumerate(data_lamda1):
@@ -126,8 +124,6 @@ def layerwise_error(data_lamda1, dir_name, colors):
 
 
 def overall_error(data_lambda1, dir_name, normalizer, colors_tab):
-
-    # Figure 3: Compute total L1 distance normalized by HesScale
     w = 0.8  # bar width
     colors = [XKCD_COLORS[key] for key in XKCD_COLORS]
 
