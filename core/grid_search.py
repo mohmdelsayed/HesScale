@@ -7,6 +7,8 @@ class GridSearch:
     """
 
     def __init__(self, **kwargs):
+        if len(kwargs) == 0:
+            raise ValueError("No hyperparameters provided")
         keys, values = zip(*kwargs.items())
         self.permutations = [dict(zip(keys, v)) for v in itertools.product(*values)]
 
