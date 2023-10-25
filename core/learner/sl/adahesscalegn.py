@@ -1,4 +1,4 @@
-from core.learner.learner import Learner
+from core.learner.sl.learner import Learner
 from core.optim.adahesscalegn import AdaHesScaleGN
 
 class AdaHesScaleGNLearner(Learner):

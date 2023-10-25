@@ -2,34 +2,32 @@ from core.task.stationary_mnist import StationaryMNIST
 from core.task.label_permuted_emnist import LabelPermutedMNIST
 from core.task.input_permuted_mnist import InputPermutedMNIST
 
-from core.network.fcn_leakyrelu import FullyConnectedLeakyReLU
-from core.network.fcn_relu import FullyConnectedReLU, ConvolutionalNetworkReLU
-from core.network.fcn_tanh import FullyConnectedTanh
+from core.network.fcn_leakyrelu import FCNLeakyReLU
+from core.network.fcn_relu import FCNReLU
+from core.network.fcn_tanh import FCNTanh
+from core.network.cnn_relu import CNNReLU
 
-from core.learner.sgd import SGDLearner
-from core.learner.adam import AdamLearner
-from core.learner.adahesscale import AdaHesScaleLearner
-from core.learner.adahesscalegn import AdaHesScaleGNLearner
-from core.learner.adahessian import AdaHessianLearner
-from core.learner.adaggnmc import AdaGGNMCLearner
-
-
+from core.learner.sl.sgd import SGDLearner
+from core.learner.sl.adam import AdamLearner
+from core.learner.sl.adahesscale import AdaHesScaleLearner
+from core.learner.sl.adahesscalegn import AdaHesScaleGNLearner
+from core.learner.sl.adahessian import AdaHessianLearner
+from core.learner.sl.adaggnmc import AdaGGNMCLearner
 import torch
-import numpy as np
 
 
 tasks = {
-    "ex1_stationary_mnist" : StationaryMNIST,
-    "ex2_input_permuted_mnist": InputPermutedMNIST,
-    "ex3_label_permuted_emnist" : LabelPermutedMNIST,
+    "stationary_mnist" : StationaryMNIST,
+    "input_permuted_mnist": InputPermutedMNIST,
+    "label_permuted_emnist" : LabelPermutedMNIST,
 
 }
 
 networks = {
-    "fully_connected_leakyrelu": FullyConnectedLeakyReLU,
-    "fully_connected_relu": FullyConnectedReLU,
-    "fully_connected_tanh": FullyConnectedTanh,
-    "convolutional_network_relu": ConvolutionalNetworkReLU,
+    "fcn_relu": FCNReLU,
+    "fcn_leakyrelu": FCNLeakyReLU,
+    "fcn_tanh": FCNTanh,
+    "cnn_relu": CNNReLU,
 }
 
 learners = {

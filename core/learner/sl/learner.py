@@ -8,7 +8,7 @@ class Learner:
         for k, v in optim_kwargs.items():
             if isinstance(v, str):
                 optim_kwargs[k] = float(v)
-        self.optimizer = optimizer
+        self.optimizer_cls = optimizer
         self.name = name
         self.extend = extend
 
@@ -19,9 +19,16 @@ class Learner:
         output = self.network(input)
         return output
 
-    def set_task(self, task):
+    def setup_task(self, task):
         if self.extend:
             self.network = extend(self.network_cls(n_obs=task.n_inputs, n_outputs=task.n_outputs).to(self.device))
         else:
             self.network = self.network_cls(n_obs=task.n_inputs, n_outputs=task.n_outputs).to(self.device)
         self.parameters = self.network.parameters()
+        self.setup_optimizer()
+
+    def setup_optimizer(self):
+        self.optimizer = self.optimizer_cls(self.parameters, **self.optim_kwargs)
+
+    def update_params(self, closure):
+        return self.optimizer.step(closure)

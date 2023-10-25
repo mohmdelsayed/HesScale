@@ -1,4 +1,4 @@
-from core.learner.learner import Learner
+from core.learner.sl.learner import Learner
 from core.optim.adaggnmc import AdaGGNMC
 
 class AdaGGNMCLearner(Learner):
