@@ -6,7 +6,7 @@ from core.runner import Runner
 from core.run.sl_run import Run
 from core.utils import create_script_generator, create_script_runner, tasks
 
-exp_name = "ex3"
+exp_name = "exp3"
 task = tasks["label_permuted_emnist"]()
 
 sgd_grid = GridSearch(
@@ -33,7 +33,7 @@ learners = [
 ]
 
 for learner, grid in zip(learners, grids):
-    runner = Runner(Run, learner, grid, exp_name, learner.name)
+    runner = Runner(Run(), learner, task, grid, exp_name)
     runner.write_cmd("generated_cmds")
     create_script_generator(f"generated_cmds/{exp_name}", exp_name)
     create_script_runner(f"generated_cmds/{exp_name}")
