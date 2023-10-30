@@ -1,6 +1,7 @@
 from core.task.stationary_mnist import StationaryMNIST
 from core.task.label_permuted_emnist import LabelPermutedMNIST
 from core.task.input_permuted_mnist import InputPermutedMNIST
+from core.task.cartpole import CartPole
 
 from core.network.fcn_leakyrelu import FCNLeakyReLU
 from core.network.fcn_relu import FCNReLU
@@ -13,6 +14,7 @@ from core.learner.sl.adahesscale import AdaHesScaleLearner
 from core.learner.sl.adahesscalegn import AdaHesScaleGNLearner
 from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
+from core.learner.rl.vanilla_sgd import VanillaSGD
 import torch
 
 
@@ -20,7 +22,10 @@ tasks = {
     "stationary_mnist" : StationaryMNIST,
     "input_permuted_mnist": InputPermutedMNIST,
     "label_permuted_emnist" : LabelPermutedMNIST,
+}
 
+environments = {
+    "cartpole": CartPole,
 }
 
 networks = {
@@ -37,6 +42,7 @@ learners = {
     "adahesscalegn": AdaHesScaleGNLearner,
     "adahessian": AdaHessianLearner,
     "adaggnmc": AdaGGNMCLearner,
+    "vanilla_sgd": VanillaSGD,
 }
 
 criterions = {

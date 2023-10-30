@@ -1,5 +1,5 @@
 import torch, sys
-import gym
+from core.utils import environments
 from core.utils import networks, learners
 from core.logger import Logger
 from backpack import extend
@@ -16,41 +16,43 @@ def signal_handler(msg, signal, frame):
     exit(0)
 
 class Run:
-    def __init__(self, name='rl_run', n_steps=10000, env='CartPole-v1', exp_name='exp1', learner='q_learning', save_path="logs", seed=0, network='mlp', **kwargs):
+    def __init__(self, name='rl_run', n_samples=10000, task='cartpole', exp_name='exp1', learner='vanilla_sgd', save_path="logs", seed=0, network='fcn_relu', **kwargs):
         self.name = name
-        self.n_steps = int(n_steps)
+        self.n_samples = int(n_samples)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.env = gym.make(env)
+        self.env = environments[task]()
 
         self.exp_name = exp_name
-        self.learner = learners[learner](networks[network](self.env.observation_space.shape[0], self.env.action_space.n), kwargs)
+        self.learner = learners[learner](networks[network], optim_kwargs=kwargs)
         self.logger = Logger(save_path)
         self.seed = int(seed)
 
     def start(self):
         torch.manual_seed(self.seed)
-        rewards_per_step = []
-
-        state = self.env.reset()
-        for step in range(self.n_steps):
+        return_per_episode = []
+        self.learner.setup_env(self.env)
+        state, _ = self.env.reset()
+        episodic_return = 0.0
+        for _ in range(self.n_samples):
             action = self.learner.act(state)
-            next_state, reward, done, _ = self.env.step(action)
+            next_state, reward, done, _, _ = self.env.step(action)
             self.learner.update(state, action, reward, next_state, done)
             state = next_state
-
+            episodic_return += reward
             if done:
-                state = self.env.reset()
-
-            rewards_per_step.append(reward)
+                state, _ = self.env.reset()
+                return_per_episode.append(episodic_return)
+                print(episodic_return)
+                episodic_return = 0.0
 
         logging_data = {
-                'rewards': rewards_per_step,
+                'returns': return_per_episode,
                 'exp_name': self.exp_name,
-                'env': self.env.spec.id,
+                'task': self.env.name,
                 'learner': self.learner.name,
-                'network': self.learner.network.name,
+                'network': self.learner.actor.name,
                 'optimizer_hps': self.learner.optim_kwargs,
-                'n_steps': self.n_steps,
+                'n_samples': self.n_samples,
                 'seed': self.seed,
         }
 
