@@ -7,7 +7,7 @@ from core.run.sl_run import Run
 from core.utils import create_script_generator, create_script_runner, tasks
 
 exp_name = "exp1"
-task = tasks["input_permuted_mnist"]()
+task = tasks["stationary_mnist"]()
 
 sgd_grid = GridSearch(
                seed=[i for i in range(0, 20)],
