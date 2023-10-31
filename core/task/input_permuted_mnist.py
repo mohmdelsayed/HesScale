@@ -6,9 +6,9 @@ import numpy as np
 
 class InputPermutedMNIST(Task):
     """
-    Iteratable MNIST task with permuted labels.
+    Iteratable MNIST task with permuted inputs.
     Each sample is a 28x28 image and the label is a number between 0 and 9.
-    The labels are permuted every 1000 steps.
+    The inputs are permuted every 5000 steps.
     """
 
     def __init__(self, name="input_permuted_mnist", batch_size=1, change_freq=5000):

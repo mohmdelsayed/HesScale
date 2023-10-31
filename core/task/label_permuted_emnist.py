@@ -3,11 +3,11 @@ import torchvision
 from .task import Task
 
 
-class LabelPermutedMNIST(Task):
+class LabelPermutedEMNIST(Task):
     """
-    Iteratable MNIST task with permuted labels.
+    Iteratable EMNIST task with permuted labels.
     Each sample is a 28x28 image and the label is a number between 0 and 9.
-    The labels are permuted every 1000 steps.
+    The labels are permuted every 2500 steps.
     """
 
     def __init__(self, name="label_permuted_emnist", batch_size=1, change_freq=2500):
@@ -63,7 +63,7 @@ class LabelPermutedMNIST(Task):
 
 
 if __name__ == "__main__":
-    task = LabelPermutedMNIST()
+    task = LabelPermutedEMNIST()
     for i, (x, y) in enumerate(task):
         print(x.shape, y.shape)
         if i == 10:
