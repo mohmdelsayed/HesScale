@@ -38,9 +38,6 @@ class BestRun:
         return best_configs
 
 if __name__ == "__main__":
-    # python core/best_run.py --task_name summer_with_sign_change
-    # --network_name fully_connected_tanh--learners sgd upgdv2_normalized --metric "area"
-    
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_name", type=str, required=True)
