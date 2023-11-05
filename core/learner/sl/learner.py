@@ -24,7 +24,7 @@ class Learner:
             self.network = extend(self.network_cls(n_obs=task.n_inputs, n_outputs=task.n_outputs).to(self.device))
         else:
             self.network = self.network_cls(n_obs=task.n_inputs, n_outputs=task.n_outputs).to(self.device)
-        self.parameters = self.network.parameters()
+        self.parameters = list(self.network.parameters())
         self.setup_optimizer()
 
     def setup_optimizer(self):
