@@ -12,7 +12,7 @@ matplotlib.rcParams["pdf.fonttype"] = 42
 matplotlib.rcParams["ps.fonttype"] = 42
 matplotlib.rcParams.update({'font.size': 12})
 
-class Plotter:
+class SLPlotter:
     def __init__(self, best_runs_path, task_name, avg_interval=10000, what_to_plot="losses"):
         self.best_runs_path = best_runs_path
         self.avg_interval = avg_interval
@@ -52,5 +52,5 @@ if __name__ == "__main__":
     what_to_plot = "accuracies"
     best_runs = BestRun("exp1/stationary_mnist", "area", "fcn_relu", ["sgd"]).get_best_run(measure=what_to_plot)
     print(best_runs)
-    plotter = Plotter(best_runs, task_name="MNIST", avg_interval=10000, what_to_plot=what_to_plot)
+    plotter = SLPlotter(best_runs, task_name="MNIST", avg_interval=10, what_to_plot=what_to_plot)
     plotter.plot()
