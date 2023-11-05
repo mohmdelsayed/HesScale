@@ -3,9 +3,9 @@ from core.task.label_permuted_emnist import LabelPermutedEMNIST
 from core.task.input_permuted_mnist import InputPermutedMNIST
 from core.task.cartpole import CartPole
 
-from core.network.fcn_leakyrelu import FCNLeakyReLU
-from core.network.fcn_relu import FCNReLU
-from core.network.fcn_tanh import FCNTanh
+from core.network.fcn_leakyrelu import FCNLeakyReLU, FCNLeakyReLUSmall
+from core.network.fcn_relu import FCNReLU, FCNReLUSmall
+from core.network.fcn_tanh import FCNTanh, FCNTanhSmall
 from core.network.cnn_relu import CNNReLU
 
 from core.learner.sl.sgd import SGDLearner
@@ -30,8 +30,11 @@ environments = {
 
 networks = {
     "fcn_relu": FCNReLU,
+    "fcn_relu_small": FCNReLUSmall,
     "fcn_leakyrelu": FCNLeakyReLU,
+    "fcn_leakyrelu_small": FCNLeakyReLUSmall,
     "fcn_tanh": FCNTanh,
+    "fcn_tanh_small": FCNTanhSmall,
     "cnn_relu": CNNReLU,
 }
 
