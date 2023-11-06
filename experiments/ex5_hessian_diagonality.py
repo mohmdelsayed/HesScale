@@ -1,7 +1,7 @@
 from core.grid_search import GridSearch
 from core.learner.sl.adam import AdamLearner
-from core.network.fcn_relu import FCNReLUSmall
-from core.network.fcn_tanh import FCNTanhSmall
+from core.network.fcn_relu import FCNReLUSmallWithNoBias
+from core.network.fcn_tanh import FCNTanhSmallWithNoBias
 from core.runner import Runner
 from core.run.hessian_diagonality import RunHessianDiagonality
 from core.utils import create_script_generator, create_script_runner, tasks
@@ -12,14 +12,14 @@ task = tasks["stationary_mnist"]()
 adam_grid_relu = GridSearch(
                seed=[i for i in range(0, 100)],
                lr=[0.001],
-               network=[FCNReLUSmall()],
+               network=[FCNReLUSmallWithNoBias()],
                n_samples=[10000],
     )
 
 adam_grid_tanh = GridSearch(
                seed=[i for i in range(0, 100)],
                lr=[0.001],
-               network=[FCNTanhSmall()],
+               network=[FCNTanhSmallWithNoBias()],
                n_samples=[10000],
     )
 

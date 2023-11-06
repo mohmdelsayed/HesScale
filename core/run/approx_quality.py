@@ -1,8 +1,8 @@
 import torch, sys
 from core.utils import tasks, networks, learners, criterions
-from core.network.fcn_relu import FCNReLUSmallSoftmax
-from core.network.fcn_leakyrelu import FCNLeakyReLUSmallSoftmax
-from core.network.fcn_tanh import FCNTanhSmallSoftMax
+from core.network.fcn_relu import FCNReLUSmall, FCNReLUSmallSoftmax
+from core.network.fcn_leakyrelu import FCNLeakyReLUSmall, FCNLeakyReLUSmallSoftmax
+from core.network.fcn_tanh import FCNTanhSmall, FCNTanhSmallSoftmax
 from core.logger import Logger
 from backpack import extend
 import torch.nn as nn
@@ -75,7 +75,14 @@ class RunApproxQuality:
         criterion = extend(criterions[self.task_batch_size_32.criterion]()) if self.learner.extend else criterions[self.task_batch_size_32.criterion]()
 
         self.learner_NLL = copy.deepcopy(self.learner)
-        self.learner_NLL.network_cls = FCNReLUSmallSoftmax
+        if self.learner.network_cls == FCNReLUSmall:
+            self.learner_NLL.network_cls = FCNReLUSmallSoftmax
+        elif self.learner.network_cls == FCNLeakyReLUSmall:
+            self.learner_NLL.network_cls = FCNLeakyReLUSmallSoftmax
+        elif self.learner.network_cls == FCNTanhSmall:
+            self.learner_NLL.network_cls = FCNTanhSmallSoftmax
+        else:
+            raise Exception("Network not supported")
         self.learner_NLL.extend = True
         self.learner_NLL.setup_task(self.task_batch_size_32)
         criterion_NLL = nn.NLLLoss(reduction="mean")

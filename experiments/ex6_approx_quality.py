@@ -10,19 +10,19 @@ exp_name = "exp6"
 task = tasks["stationary_mnist"]()
 
 adam_grid_relu = GridSearch(
-               seed=[i for i in range(0, 100)],
+               seed=[i for i in range(0, 40)],
                lr=[0.001],
                network=[FCNReLUSmall()],
                n_samples=[10000],
-               n_eval_samples=[10000],
+               n_eval_samples=[100],
     )
 
 adam_grid_tanh = GridSearch(
-               seed=[i for i in range(0, 100)],
+               seed=[i for i in range(0, 40)],
                lr=[0.001],
                network=[FCNTanhSmall()],
                n_samples=[10000],
-               n_eval_samples=[10000],
+               n_eval_samples=[100],
     )
 
 
