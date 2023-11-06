@@ -11,7 +11,7 @@ class Runner:
     def get_combinations(self):
         return self.grid_search.get_permutations()
 
-    def write_cmd(self, directory):
+    def write_cmd(self, directory, mode='w'):
         cmd = ""
         for permutation in self.get_combinations():
             cmd += f"python3 core/run/{self.run}.py --task {self.task} --learner {self.learner} --exp_name {self.exp_name}"
@@ -24,5 +24,5 @@ class Runner:
         if not os.path.exists(dir):
             os.makedirs(dir)
 
-        with open(f"{dir}/{self.learner}.txt", "w") as f:
+        with open(f"{dir}/{self.learner}.txt", mode) as f:
             f.write(cmd)

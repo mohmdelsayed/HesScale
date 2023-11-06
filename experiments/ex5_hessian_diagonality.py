@@ -31,8 +31,10 @@ learners = [
     AdamLearner(),
 ]
 
+mode = 'w'
 for learner, grid in zip(learners, grids):
     runner = Runner(RunHessianDiagonality(), learner, task, grid, exp_name)
-    runner.write_cmd("generated_cmds")
+    runner.write_cmd("generated_cmds", mode=mode)
+    mode = 'a'
     create_script_generator(f"generated_cmds/{exp_name}", exp_name)
     create_script_runner(f"generated_cmds/{exp_name}")
