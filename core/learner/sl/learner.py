@@ -25,6 +25,7 @@ class Learner:
         else:
             self.network = self.network_cls(n_obs=task.n_inputs, n_outputs=task.n_outputs).to(self.device)
         self.parameters = list(self.network.parameters())
+        self.named_parameters = list(self.network.named_parameters())
         self.setup_optimizer()
 
     def setup_optimizer(self):
@@ -32,3 +33,6 @@ class Learner:
 
     def update_params(self, closure):
         return self.optimizer.step(closure)
+
+    def zero_grad(self):
+        self.optimizer.zero_grad()
