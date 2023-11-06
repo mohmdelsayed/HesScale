@@ -123,10 +123,10 @@ class RunApproxQuality:
 
 
     def compute_l1_errors(self, criterion, criterion_NLL):
+        avgs_lists = {}
         for _ in range(self.n_eval_samples):
             input, target = next(self.task_batch_size_1)
             input, target = input.to(self.device), target.to(self.device)
-            avgs_lists = {}
             sample_error_per_method = self.compare_hess_methods(input, target, criterion, criterion_NLL)
             if not avgs_lists:
                 avgs_lists = sample_error_per_method.copy()
