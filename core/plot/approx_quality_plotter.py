@@ -1,6 +1,6 @@
 import json, os
 import matplotlib.pyplot as plt
-from core.best_run import BestRun
+from core.best_config import BestConfig
 from core.utils import XKCD_COLORS
 import numpy as np
 import matplotlib
@@ -188,7 +188,7 @@ class ApproxQualityPlotter:
 
 
 if __name__ == "__main__":
-    best_runs = BestRun("exp6/stationary_mnist", "area", "fcn_relu_small", ["adam"]).get_best_run(measure="accuracies")
+    best_runs = BestConfig("exp6/stationary_mnist", "fcn_relu_small", ["adam"]).get_best_run(measure="accuracies")
     print(best_runs)
     plotter = ApproxQualityPlotter(best_runs, task_name="Approximation Quality of Hessian Diagonals")
     plotter.plot_l1_error()

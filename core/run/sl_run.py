@@ -14,7 +14,7 @@ def signal_handler(msg, signal, frame):
         f.write(f"{cmd} \n")
     exit(0)
 
-class Run:
+class SLRun:
     def __init__(self, name='sl_run', n_samples=10000, task='stationary_mnist', exp_name='exp1', learner='sgd', save_path="logs", seed=0, network='fcn_relu', **kwargs):
         self.name = name
         self.n_samples = int(n_samples)
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # start the run using the command line arguments
     ll = sys.argv[1:]
     args = {k[2:]:v for k,v in zip(ll[::2], ll[1::2])}
-    run = Run(**args)
+    run = SLRun(**args)
     cmd = f"python3 {' '.join(sys.argv)}"
     signal.signal(signal.SIGUSR1, partial(signal_handler, (cmd, args['learner'])))
     current_time = time.time()

@@ -26,3 +26,5 @@ class Runner:
 
         with open(f"{dir}/{self.learner}.txt", mode) as f:
             f.write(cmd)
+
+        return len(self.get_combinations())

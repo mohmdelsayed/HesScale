@@ -1,8 +1,9 @@
 import gymnasium as gym
+from core.task.environment import Environment
 
-class CartPole:
+class CartPole(Environment):
     """
-    Iteratable CartPole task.
+    CartPole environment.
     Each sample is a 4-dimensional state and the action is a number between 0 and 1.
     """
 

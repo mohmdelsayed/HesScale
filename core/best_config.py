@@ -1,10 +1,9 @@
 import os
 import json
 import numpy as np
-class BestRun:
-    def __init__(self, task_name, metric, network_name, learners):
+class BestConfig:
+    def __init__(self, task_name, network_name, learners):
         self.task_name = task_name
-        self.metric = metric
         self.network_name = network_name
         self.learners = learners
     
@@ -45,5 +44,5 @@ if __name__ == "__main__":
     parser.add_argument('--metric', nargs='+', default=[])
     parser.add_argument('--learners', nargs='+', default=[])
     args = parser.parse_args()
-    best_configs = BestRun(args.task_name, args.metric, args.network_name, args.learners).get_best_run(measure="losses")
+    best_configs = BestConfig(args.task_name, args.metric, args.network_name, args.learners).get_best_run(measure="losses")
     print(best_configs)

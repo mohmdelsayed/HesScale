@@ -1,6 +1,6 @@
 import json
 import matplotlib.pyplot as plt
-from core.best_run import BestRun
+from core.best_config import BestConfig
 import os
 import numpy as np
 import matplotlib
@@ -50,7 +50,7 @@ class SLPlotter:
 
 if __name__ == "__main__":
     what_to_plot = "accuracies"
-    best_runs = BestRun("exp1/stationary_mnist", "area", "fcn_relu", ["sgd"]).get_best_run(measure=what_to_plot)
+    best_runs = BestConfig("exp1/stationary_mnist", "fcn_relu", ["sgd"]).get_best_run(measure=what_to_plot)
     print(best_runs)
     plotter = SLPlotter(best_runs, task_name="MNIST", avg_interval=10, what_to_plot=what_to_plot)
     plotter.plot()

@@ -1,6 +1,6 @@
 import json
 import matplotlib.pyplot as plt
-from core.best_run import BestRun
+from core.best_config import BestConfig
 import os
 import numpy as np
 import matplotlib
@@ -59,7 +59,7 @@ class HessianPlotter:
             print("Diag Dominance After: ", diag_dominance_after)
 
 if __name__ == "__main__":
-    best_runs = BestRun("exp5/stationary_mnist", "area", "fcn_relu_small_no_bias", ["adam"]).get_best_run(measure="accuracies")
+    best_runs = BestConfig("exp5/stationary_mnist", "fcn_relu_small_no_bias", ["adam"]).get_best_run(measure="accuracies")
     print(best_runs)
     plotter = HessianPlotter(best_runs, task_name="Hessian on MNIST")
     plotter.hessian_heatmap()
