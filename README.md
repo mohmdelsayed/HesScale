@@ -25,47 +25,6 @@ python experiments/ex1_stationary_mnist.py
 which will generate a `generated_cmds` directory containing text files that has the python cmds need to be run. In addition, there will be a script generated automatically for running on compute canada.
 
 
-
-## Run a minimal example:
-We added a couple of minimal examples in the `examples` directory for easier understanding of how to use this package. Here is a minimal example:
-```python
-import torch
-from backpack import backpack, extend
-from optimizers.adahesscale import AdaHesScale
-
-hidden_units = 128
-n_obs = 6
-n_classes = 10
-lr = 0.0004
-batch_size = 1
-
-model = torch.nn.Sequential(
-    torch.nn.Linear(n_obs, hidden_units),
-    torch.nn.Sigmoid(),
-    torch.nn.Linear(hidden_units, hidden_units),
-    torch.nn.Tanh(),
-    torch.nn.Linear(hidden_units, n_classes),
-)
-loss_func = torch.nn.CrossEntropyLoss()
-optimizer = AdaHesScale(model.parameters(), lr=lr)
-
-extend(model)
-extend(loss_func)
-
-inputs = torch.randn((batch_size, n_obs))
-target_class = torch.randint(0, n_classes, (batch_size,))
-
-prediction = model(inputs)
-optimizer.zero_grad()
-loss = loss_func(prediction, target_class)
-
-with backpack(optimizer.method):
-    loss.backward()
-
-optimizer.step()
-
-```
-
 ## License
 Distributed under the [MIT License](https://opensource.org/licenses/MIT). See `LICENSE` for more information.
 
