@@ -15,8 +15,8 @@ class CartPole(Environment):
         self.action_space_type = 'discrete'
         super().__init__()
 
-    def reset(self):
-        return self.env.reset()
+    def reset(self, seed=None):
+        return self.env.reset(seed=seed)
     
     def step(self, action):
         return self.env.step(action)        

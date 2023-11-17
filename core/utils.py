@@ -15,6 +15,7 @@ from core.learner.sl.adahesscalegn import AdaHesScaleGNLearner, AdaHesScaleGNSqr
 from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
 from core.learner.rl.vanilla_sgd import VanillaSGD
+from core.learner.rl.a2c import A2C
 import torch
 
 
@@ -54,6 +55,7 @@ learners = {
     "adahessian": AdaHessianLearner,
     "adaggnmc": AdaGGNMCLearner,
     "vanilla_sgd": VanillaSGD,
+    "a2c": A2C,
 }
 
 criterions = {

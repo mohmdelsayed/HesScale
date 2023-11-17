@@ -30,20 +30,23 @@ class RLRun:
     def start(self):
         torch.manual_seed(self.seed)
         return_per_episode = []
+        # import pudb;pu.db
         self.learner.setup_env(self.env)
-        state, _ = self.env.reset()
+        state, _ = self.env.reset(seed=self.seed)
         episodic_return = 0.0
-        for _ in range(self.n_samples):
+        epi_t0 = 0
+        for t in range(self.n_samples):
             action = self.learner.act(state)
-            next_state, reward, done, _, _ = self.env.step(action)
-            self.learner.update(state, action, reward, next_state, done)
+            next_state, reward, terminated, truncated, _ = self.env.step(action)
+            self.learner.update(state, action, reward, next_state, terminated)
             state = next_state
             episodic_return += reward
-            if done:
+            if terminated or truncated:
                 state, _ = self.env.reset()
                 return_per_episode.append(episodic_return)
-                print(episodic_return)
+                print(f'{t} ( {t - epi_t0} ) {episodic_return}')
                 episodic_return = 0.0
+                epi_t0 = t
 
         logging_data = {
                 'returns': return_per_episode,
@@ -70,13 +73,14 @@ if __name__ == "__main__":
     cmd = f"python3 {' '.join(sys.argv)}"
     signal.signal(signal.SIGUSR1, partial(signal_handler, (cmd, args['learner'])))
     current_time = time.time()
-    try:
-        run.start()
-        with open(f"finished_{args['learner']}.txt", "a") as f:
-            f.write(f"{cmd} time_elapsed: {time.time()-current_time} \n")
-    except Exception as e:
-        with open(f"failed_{args['learner']}.txt", "a") as f:
-            f.write(f"{cmd} \n")
-        with open(f"failed_{args['learner']}_msgs.txt", "a") as f:
-            f.write(f"{cmd} \n")
-            f.write(f"{traceback.format_exc()} \n\n")
+    run.start()
+    # try:
+    #     run.start()
+    #     with open(f"finished_{args['learner']}.txt", "a") as f:
+    #         f.write(f"{cmd} time_elapsed: {time.time()-current_time} \n")
+    # except Exception as e:
+    #     with open(f"failed_{args['learner']}.txt", "a") as f:
+    #         f.write(f"{cmd} \n")
+    #     with open(f"failed_{args['learner']}_msgs.txt", "a") as f:
+    #         f.write(f"{cmd} \n")
+    #         f.write(f"{traceback.format_exc()} \n\n")
