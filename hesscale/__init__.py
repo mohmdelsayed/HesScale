@@ -29,6 +29,7 @@ from torch.nn import (
     LogSoftmax,
     Softmax,
 )
+from .core.additional_losses import SoftmaxNLLLoss
 
 from .core import (
     activations,
@@ -91,6 +92,7 @@ class HesScale(BackpropExtension):
                 SELU: activations.SELUHesScale(),
                 LogSoftmax: activations.LogSoftmaxHesScale(),
                 Softmax: activations.SoftmaxHesScale(),
+                SoftmaxNLLLoss: losses.SoftmaxNLLLossHesScale(),
             },
         )
 

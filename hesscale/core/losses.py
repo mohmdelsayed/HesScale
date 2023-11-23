@@ -24,3 +24,7 @@ class CrossEntropyLossHesScale(LossHesScale):
 class NLLLossHesScale(LossHesScale):
     def __init__(self):
         super().__init__(derivatives=NLLLossDerivativesHesScale())
+
+class SoftmaxNLLLossHesScale(LossHesScale):
+    def __init__(self):
+        super().__init__(derivatives=CrossEntropyLossDerivativesHesScale())
