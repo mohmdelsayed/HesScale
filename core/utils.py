@@ -10,6 +10,7 @@ from core.network.cnn_relu import CNNReLU
 
 from core.learner.sl.sgd import SGDLearner
 from core.learner.sl.adam import AdamLearner
+from core.learner.sl.adahg import AdaHGLearner, AdaHGSqrtLearner
 from core.learner.sl.adahesscale import AdaHesScaleLearner
 from core.learner.sl.adahesscalegn import AdaHesScaleGNLearner, AdaHesScaleGNSqrtLearner, AdaHesScaleGNAdamStyleLearner
 from core.learner.sl.adahessian import AdaHessianLearner
@@ -47,6 +48,8 @@ networks = {
 learners = {
     "sgd": SGDLearner,
     "adam": AdamLearner,
+    "adahg": AdaHGLearner,
+    "adahg_sqrt": AdaHGSqrtLearner,
     "adahesscale": AdaHesScaleLearner,
     "adahesscalegn": AdaHesScaleGNLearner,
     "adahesscalegn_sqrt": AdaHesScaleGNSqrtLearner,
