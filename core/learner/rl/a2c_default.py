@@ -4,12 +4,10 @@ import torch
 from core.learner.rl.actor_critic_learner import ActorCriticLearner
 from core.optim.adam import Adam
 
-from .multi_label_loss import MultiLabelCrossEntropy
-
-class A2C(ActorCriticLearner):
+class A2CDefault(ActorCriticLearner):
     def __init__(self, network=None, gamma=0.99, optim_kwargs={}):
         optimizer = Adam
-        name='a2c'
+        name='a2c_default'
         self.gamma = gamma
         # self.gamma_actor = gamma
         self.transitions = []
@@ -55,10 +53,10 @@ class A2C(ActorCriticLearner):
             v_rets[t] = rs[t] + self.gamma * v_rets[t + 1]
         v_rets = v_rets.view(-1, 1)
 
-        action_prefs = self.actor(obs)
-        acs_onehot = torch.nn.functional.one_hot(acs[:, 0].type(torch.int64), num_classes=action_prefs.shape[1]).float()
-        actor_loss = MultiLabelCrossEntropy(reduction='mean')(action_prefs, acs_onehot * (v_rets - vals))
-        critic_loss = torch.nn.MSELoss()(v_rets, self.predict(obs))
+        dists = self.dist(obs)
+        logps = dists.log_prob(acs[:, 0]).view(-1, 1)
+        actor_loss = ((v_rets - vals) * -logps).mean()
+        critic_loss = ((v_rets - self.predict(obs)).pow(2)).mean()
 
         def actor_closure():            
             return actor_loss, acs

@@ -16,6 +16,7 @@ from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
 from core.learner.rl.vanilla_sgd import VanillaSGD
 from core.learner.rl.a2c import A2C
+from core.learner.rl.a2c_default import A2CDefault
 import torch
 
 
@@ -56,6 +57,7 @@ learners = {
     "adaggnmc": AdaGGNMCLearner,
     "vanilla_sgd": VanillaSGD,
     "a2c": A2C,
+    "a2c_default": A2CDefault,
 }
 
 criterions = {
