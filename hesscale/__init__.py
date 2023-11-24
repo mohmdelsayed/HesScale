@@ -130,5 +130,6 @@ class HesScaleGN(BackpropExtension):
                 SELU: activations_gn.SELUHesScale(),
                 LogSoftmax: activations_gn.LogSoftmaxHesScale(),
                 Softmax: activations_gn.SoftmaxHesScale(),
+                SoftmaxNLLLoss: losses.SoftmaxNLLLossHesScale(),
             },
         )
