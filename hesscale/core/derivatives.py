@@ -346,6 +346,19 @@ class NLLLossDerivativesHesScale:
         )
         return (diag_H, LOSS)
 
+class GaussianNLLLossMuDerivativesHesScale:
+    def diag_hessian(self, module, g_inp, g_out):
+        diag_H = -1.0 / (module.input1 ** 2 + module.eps)
+        if module.reduction == "mean":
+            diag_H /= module.input0.shape[0]
+        return (diag_H.unsqueeze_(0), LOSS)
+
+class GaussianNLLLossVarDerivativesHesScale:
+    def diag_hessian(self, module, g_inp, g_out):
+        diag_H =  (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) / (module.input0 ** 4 + module.eps)
+        if module.reduction == "mean":
+            diag_H /= module.input0.shape[0]
+        return (diag_H.unsqueeze_(0), LOSS)
 
 #############################################
 #              Activations                  #
@@ -503,6 +516,19 @@ class SigmoidDerivativesHesScale(BaseActivationDerivatives, SigmoidDerivatives):
     def __init__(self):
         super().__init__()
 
+
+class ExponentialDerivativesHesScale(BaseActivationDerivatives):
+    def __init__(self):
+        super().__init__()
+
+    def hessian_is_zero(self):
+        return False
+
+    def df(self, module, g_inp, g_out):
+        return module.output
+
+    def d2f(self, module, g_inp, g_out):
+        return module.output
 
 class LogSigmoidDerivativesHesScale(BaseActivationDerivatives, LogSigmoidDerivatives):
     def __init__(self):

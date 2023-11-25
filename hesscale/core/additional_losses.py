@@ -29,3 +29,23 @@ class SoftmaxNLLLoss(_Loss):
             return -torch.sum(torch.einsum("ij,ij->i", log_softmax, target))
         else:
             raise ValueError("Invalid reduction type")
+
+class GaussianNLLLossMu(_Loss):
+    def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean') -> None:
+        super(GaussianNLLLossMu, self).__init__(None, None, reduction)
+        self.full = full
+        self.eps = eps
+
+    def forward(self, input: Tensor, var: Tensor, target: Tensor) -> Tensor:
+        var = var.clone().detach()
+        return F.gaussian_nll_loss(input, target, var, full=self.full, eps=self.eps, reduction=self.reduction)
+    
+class GaussianNLLLossVar(_Loss):
+    def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean') -> None:
+        super(GaussianNLLLossVar, self).__init__(None, None, reduction)
+        self.full = full
+        self.eps = eps
+
+    def forward(self, var: Tensor, input: Tensor, target: Tensor) -> Tensor:
+        input = input.clone().detach()
+        return F.gaussian_nll_loss(input, target, var, full=self.full, eps=self.eps, reduction=self.reduction)
