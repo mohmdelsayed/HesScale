@@ -8,6 +8,7 @@ from .derivatives_gn import (
     SigmoidDerivativesHesScale,
     SoftmaxDerivativesHesScale,
     TanhDerivativesHesScale,
+    ExponentialDerivativesHesScale,
 )
 from .hesscale_base import BaseModuleHesScale
 
@@ -55,3 +56,7 @@ class LogSigmoidHesScale(BaseModuleHesScale):
 class SoftmaxHesScale(BaseModuleHesScale):
     def __init__(self):
         super().__init__(derivatives=SoftmaxDerivativesHesScale())
+
+class ExponentialHesScale(BaseModuleHesScale):
+    def __init__(self):
+        super().__init__(derivatives=ExponentialDerivativesHesScale())
