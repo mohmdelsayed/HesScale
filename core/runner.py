@@ -20,11 +20,10 @@ class Runner:
                 cmd += f" --{key} {value}"
             cmd += "\n"
 
-        dir = os.path.join(directory, self.exp_name)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        dir = directory / self.exp_name
+        os.makedirs(dir, exist_ok=True)
 
-        with open(f"{dir}/{self.learner}.txt", mode) as f:
+        with open(dir / f"{self.learner}.txt", mode) as f:
             f.write(cmd)
 
         return len(self.get_combinations())

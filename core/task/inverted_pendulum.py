@@ -1,23 +1,22 @@
 import gym
 from core.task.environment import Environment
 
-class CartPole(Environment):
+class InvertedPendulum(Environment):
     """
-    CartPole environment.
-    Each sample is a 4-dimensional state and the action is a number between 0 and 1.
+    InvertedPendulum environment.
+    https://gymnasium.farama.org/environments/mujoco/inverted_pendulum/
     """
 
-    def __init__(self, name="cartpole", seed=0):
-        self.env = gym.make('CartPole-v1')
-        self.env.seed(seed)
+    def __init__(self, name="inverted_pendulum"):
+        self.env = gym.make('InvertedPendulum-v2')
         self.name = name
-        self.n_states = 4
-        self.n_actions = 2
-        self.action_space_type = 'discrete'
+        # self.n_states = 4
+        # self.n_actions = 2
+        self.action_space_type = 'continuous'
         super().__init__()
 
-    def reset(self):
-        return self.env.reset()
+    def reset(self, seed=None):
+        return self.env.reset(seed=seed)
     
     def step(self, action):
         return self.env.step(action)        
@@ -27,12 +26,9 @@ class CartPole(Environment):
 
     def __str__(self) -> str:
         return self.name
-
-    def get_max_episode_steps(self):
-        return self.env._max_episode_steps
     
 if __name__ == "__main__":
-    env = CartPole()
+    env = InvertedPendulum()
     env.reset()
     for i in range(100):
         # get random action

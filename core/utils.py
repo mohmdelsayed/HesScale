@@ -2,6 +2,7 @@ from core.task.stationary_mnist import StationaryMNIST
 from core.task.label_permuted_emnist import LabelPermutedEMNIST
 from core.task.input_permuted_mnist import InputPermutedMNIST
 from core.task.cartpole import CartPole
+from core.task.inverted_pendulum import InvertedPendulum
 
 from core.network.fcn_leakyrelu import FCNLeakyReLU, FCNLeakyReLUSmallWithNoBias, FCNLeakyReLUSmall, FCNLeakyReLUSmallSoftmax
 from core.network.fcn_relu import FCNReLU, FCNReLUSmallWithNoBias, FCNReLUSmall, FCNReLUSmallSoftmax
@@ -28,6 +29,7 @@ tasks = {
 
 environments = {
     "cartpole": CartPole,
+    "inverted_pendulum": InvertedPendulum,
 }
 
 networks = {
@@ -66,23 +68,25 @@ criterions = {
 }
 
 
-def create_script_generator(dir_name, exp_name, learner_name, num_jobs, time='01:00:00', memory='2G'):
+def create_script_generator(hes_dir, save_dir, exp_name, env_dir, learner_name, num_jobs, time='01:00:00', memory='2G'):
+    cmds_file = (save_dir / f'{exp_name}/{learner_name}.txt').resolve()
     cmd = f'''#!/bin/bash
 #SBATCH --signal=USR1@90
 #SBATCH --job-name={exp_name}_{learner_name} \t\t\t# single job name for the array
 #SBATCH --mem={memory}\t\t\t# maximum memory 100M per job
 #SBATCH --time={time}\t\t\t# maximum wall time per job in d-hh:mm or hh:mm:ss
 #SBATCH --array=1-{num_jobs}
-#SBATCH --account=def-ashique
-cd ../../
-FILE="$SCRATCH/HesScale/generated_cmds/{exp_name}/{learner_name}.txt"
+#SBATCH --account=rrg-ashique
+
+cd {hes_dir.resolve()}
+FILE="{cmds_file}"
 SCRIPT=$(sed -n "${{SLURM_ARRAY_TASK_ID}}p" $FILE)
-module load python/3.7.9
-source $SCRATCH/HesScale/.hesscale/bin/activate
+module load python/3.8.10
+source {(env_dir / "bin/activate").resolve()}
 srun $SCRIPT
 '''
 
-    with open(f"{dir_name}/{exp_name}/{learner_name}.sh", "w") as f:
+    with open(save_dir / f"{exp_name}/{learner_name}.sh", "w") as f:
         f.write(cmd)
 
     
@@ -92,7 +96,7 @@ for f in *.sh
 do sbatch $f
 done
 '''
-    with open(f"{save_dir}/{exp_name}/run_all_scripts.bash", "w") as f:
+    with open(save_dir / f"{exp_name}/run_all_scripts.bash", "w") as f:
         f.write(cmd)
 
 

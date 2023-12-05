@@ -3,17 +3,24 @@ from backpack import extend
 import torch
 from core.learner.rl.actor_critic_learner import ActorCriticLearner
 from core.optim.adam import Adam
-
-from .multi_label_loss import MultiLabelCrossEntropy
+from core.optim.adahesscalegn import AdaHesScaleGN, AdaHesScaleGNSqrt, AdaHesScaleGNAdamStyle
+from hesscale.core.additional_losses import SoftmaxNLLLoss
+from hesscale.core.losses_gn import MSELossHesScale
 
 class A2C(ActorCriticLearner):
-    def __init__(self, network=None, gamma=0.99, optim_kwargs={}):
-        optimizer = Adam
+    def __init__(self, network=None, gamma=0.99, optim='adam', optim_kwargs={}):
+        optimizer = {'adam': Adam, 'adahesscalegn_sqrt': AdaHesScaleGNSqrt}[optim]
         name='a2c'
+        self.extend = True
         self.gamma = gamma
         # self.gamma_actor = gamma
         self.transitions = []
-        super().__init__(name, network, optimizer, optim_kwargs)
+        self.ac_lossf = SoftmaxNLLLoss(reduction='mean')
+        self.cr_lossf = torch.nn.MSELoss()
+        if self.extend:
+            self.ac_lossf = extend(self.ac_lossf)
+            self.cr_lossf = extend(self.cr_lossf)
+        super().__init__(name, network, optimizer, optim_kwargs, extend=self.extend)
 
     def act(self, state):
         state = torch.from_numpy(state).float().to(self.device)
@@ -53,12 +60,13 @@ class A2C(ActorCriticLearner):
         v_rets[-1] = rs[-1] + (1 - termin) * self.gamma * next_val
         for t in reversed(range(steps - 1)):
             v_rets[t] = rs[t] + self.gamma * v_rets[t + 1]
-        v_rets = v_rets.view(-1, 1)
+        v_rets = v_rets.view(-1, 1).detach()
 
         action_prefs = self.actor(obs)
         acs_onehot = torch.nn.functional.one_hot(acs[:, 0].type(torch.int64), num_classes=action_prefs.shape[1]).float()
-        actor_loss = MultiLabelCrossEntropy(reduction='mean')(action_prefs, acs_onehot * (v_rets - vals))
-        critic_loss = torch.nn.MSELoss()(v_rets, self.predict(obs))
+        actor_loss = self.ac_lossf(action_prefs, acs_onehot * (v_rets - vals))
+        critic_loss = self.cr_lossf(self.predict(obs), v_rets)
+        # critic_loss = self.cr_lossf(v_rets.unsqueeze(0), self.predict(obs).unsqueeze(0))
 
         def actor_closure():            
             return actor_loss, acs

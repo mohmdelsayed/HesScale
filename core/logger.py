@@ -18,7 +18,7 @@ class Logger:
             file_name += f'{key}_{value}_'
         file_name = file_name[:-1]
         
-        dir = f"{self.log_dir}/{kwargs['exp_name']}/{kwargs['task']}/{kwargs['learner']}/{kwargs['network']}/{file_name}/"
+        dir = f"{self.log_dir}/{kwargs['exp_name']}/{kwargs['task']}/{kwargs['learner']}/{kwargs['optimizer']}/{kwargs['network']}/{file_name}/"
         if not os.path.exists(dir):
             os.makedirs(dir)
 

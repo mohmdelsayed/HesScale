@@ -1,16 +1,21 @@
 import os
 import json
 import numpy as np
+
+import core.plot.rl_plotter
+
 class BestConfig:
-    def __init__(self, task_name, network_name, learners):
+    def __init__(self, exp_name, task_name, network_name, learners, optims):
+        self.exp_name = exp_name
         self.task_name = task_name
         self.network_name = network_name
         self.learners = learners
+        self.optims = optims
     
     def get_best_run(self, measure="losses", filter_key=None):
         best_configs = []
-        for learner in self.learners:
-            path = f"logs/{self.task_name}/{learner}/{self.network_name}/"
+        for learner, optim in zip(self.learners, self.optims):
+            path = f"logs/{self.exp_name}/{self.task_name}/{learner}/{optim}/{self.network_name}/"
             subdirectories = [f.path for f in os.scandir(path) if f.is_dir()]
 
             configs = {}
@@ -21,16 +26,25 @@ class BestConfig:
                 configs[subdirectory] = {}
                 seeds = os.listdir(f'{subdirectory}')
                 configuration_list = []
+                ts_list = []
                 for seed in seeds:
                     with open(f"{subdirectory}/{seed}") as json_file:
                         data = json.load(json_file)
-                        configuration_list.append(data[measure])
+                        if measure == 'returns':
+                            n_bins = 100
+                            bin_wid = data['n_samples'] // n_bins
+                            ts, rets, _, _, _, _ = core.plot.rl_plotter.bin_episodes(np.array(data['ts']), np.array(data[measure]), bin_wid)
+                            ts_list.append(ts[:n_bins])
+                            configuration_list.append(rets[:n_bins])
+                        else:
+                            configuration_list.append(data[measure])
 
                 mean_list = np.nan_to_num(np.array(configuration_list), nan=np.iinfo(np.int32).max).mean(axis=-1)
+                configs[subdirectory]["ts"] = ts_list[0]
                 configs[subdirectory]["means"] = mean_list
             if measure == "losses":
                 best_configs.append(min(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
-            elif measure == "accuracies":
+            elif measure in ["accuracies", "returns"]:
                 best_configs.append(max(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
             else:
                 raise Exception("measure must be loss or accuracy")
