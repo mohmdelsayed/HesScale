@@ -35,7 +35,9 @@ class SLRun:
         self.learner.setup_task(self.task)
         criterion = extend(criterions[self.task.criterion]()) if self.learner.extend else criterions[self.task.criterion]()
 
-        for _ in range(self.n_samples):
+        l = []
+        a = []
+        for i in range(self.n_samples):
             input, target = next(self.task)
             input, target = input.to(self.device), target.to(self.device)
             def closure():
@@ -43,9 +45,20 @@ class SLRun:
                 loss = criterion(output, target)
                 return loss, output
             loss, output = self.learner.update_params(closure=closure)
+            # check if loss is nan
+            if torch.isnan(loss):
+                raise ValueError("Loss is nan")
             losses_per_step_size.append(loss.item())
+            l.append(loss.item())
+            a.append((output.argmax(dim=1) == target).float().mean().item())
             if self.task.criterion == 'cross_entropy':
                 accuracy_per_step_size.append((output.argmax(dim=1) == target).float().mean().item())
+            if i % self.task.change_freq == 0:
+                avg_l = sum(l)/len(l)
+                avg_a = sum(a)/len(a)
+                print(f"Task {i/self.task.change_freq}: loss {avg_l}, accuracy {avg_a}")
+                l = []
+                a = []
 
         logging_data = {
                 'losses': losses_per_step_size,
