@@ -69,7 +69,7 @@ class AdamTrustRegionG(Optimizer):
                 
                 state["u"] = step_size * exp_avg / denom
 
-                trust_region_term += (exp_avg_sq * (state["u"] ** 2)).sum()
+                trust_region_term += (exp_avg_sq.sqrt() * (state["u"] ** 2)).sum()
 
         for group in self.param_groups:
             for p in group["params"]:
