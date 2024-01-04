@@ -15,6 +15,8 @@ from core.learner.sl.adam_overshooting import AdamWithOvershootingPreventionLear
 from core.learner.sl.adahg import AdaHGLearner, AdaHGSqrtLearner
 from core.learner.sl.adahesscale import AdaHesScaleLearner, AdaHesScaleSqrtLearner, AdaHesScaleAdamStyleLearner
 from core.learner.sl.adahesscalegn import AdaHesScaleGNLearner, AdaHesScaleGNSqrtLearner, AdaHesScaleGNAdamStyleLearner
+from core.learner.sl.adahesscalegn_with_scaling import AdaHesScaleGNScaledLearner, AdaHesScaleGNSqrtScaledLearner, AdaHesScaleGNAdamStyleScaledLearner
+from core.learner.sl.adahesscale_with_scaling import AdaHesScaleScaledLearner, AdaHesScaleSqrtScaledLearner, AdaHesScaleAdamStyleScaledLearner
 from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
 from core.learner.rl.vanilla_sgd import VanillaSGD
@@ -58,9 +60,15 @@ learners = {
     "adahesscale": AdaHesScaleLearner,
     "adahesscale_sqrt": AdaHesScaleSqrtLearner,
     "adahesscale_adamstyle": AdaHesScaleAdamStyleLearner,
+    "adahesscale_scaled": AdaHesScaleScaledLearner,
+    "adahesscale_sqrt_scaled": AdaHesScaleSqrtScaledLearner,
+    "adahesscale_adamstyle_scaled": AdaHesScaleAdamStyleScaledLearner,
     "adahesscalegn": AdaHesScaleGNLearner,
     "adahesscalegn_sqrt": AdaHesScaleGNSqrtLearner,
     "adahesscalegn_adamstyle": AdaHesScaleGNAdamStyleLearner,
+    "adahesscalegn_scaled": AdaHesScaleGNScaledLearner,
+    "adahesscalegn_sqrt_scaled": AdaHesScaleGNSqrtScaledLearner,
+    "adahesscalegn_adamstyle_scaled": AdaHesScaleGNAdamStyleScaledLearner,
     "adahessian": AdaHessianLearner,
     "adaggnmc": AdaGGNMCLearner,
     "vanilla_sgd": VanillaSGD,
