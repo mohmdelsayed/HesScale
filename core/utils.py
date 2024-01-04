@@ -10,7 +10,7 @@ from core.network.cnn_relu import CNNReLU
 
 from core.learner.sl.sgd import SGDLearner
 from core.learner.sl.adam import AdamLearner
-from core.learner.sl.adam_trust_region import AdamScaledLearner
+from core.learner.sl.adam_scaled import AdamScaledLearner, AdamScaledSqrtLearner
 from core.learner.sl.adam_overshooting import AdamWithOvershootingPreventionLearner
 from core.learner.sl.adahg import AdaHGLearner, AdaHGSqrtLearner
 from core.learner.sl.adahesscale import AdaHesScaleLearner, AdaHesScaleSqrtLearner, AdaHesScaleAdamStyleLearner
@@ -52,6 +52,7 @@ learners = {
     "adam": AdamLearner,
     "adam_with_overshooting_prevention": AdamWithOvershootingPreventionLearner,
     "adam_scaled": AdamScaledLearner,
+    "adam_scaled_sqrt": AdamScaledSqrtLearner,
     "adahg": AdaHGLearner,
     "adahg_sqrt": AdaHGSqrtLearner,
     "adahesscale": AdaHesScaleLearner,
