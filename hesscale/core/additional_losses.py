@@ -31,21 +31,35 @@ class SoftmaxNLLLoss(_Loss):
             raise ValueError("Invalid reduction type")
 
 class GaussianNLLLossMu(_Loss):
-    def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean') -> None:
+    def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean', sign=1.) -> None:
         super(GaussianNLLLossMu, self).__init__(None, None, reduction)
         self.full = full
         self.eps = eps
+        self.sign = sign
 
-    def forward(self, input: Tensor, var: Tensor, target: Tensor) -> Tensor:
+    def forward(self, input: Tensor, var: Tensor, target: Tensor, scaling: Tensor) -> Tensor:
         var = var.clone().detach()
-        return F.gaussian_nll_loss(input, target, var, full=self.full, eps=self.eps, reduction=self.reduction)
+        value = F.gaussian_nll_loss(input, target, var, full=self.full, eps=self.eps, reduction="none") * scaling * self.sign
+        if self.reduction == 'mean':
+            return torch.mean(value)
+        elif self.reduction == 'sum':
+            return torch.sum(value)
+        else:
+            raise ValueError("Invalid reduction type")
     
 class GaussianNLLLossVar(_Loss):
-    def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean') -> None:
+    def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean', sign=1.) -> None:
         super(GaussianNLLLossVar, self).__init__(None, None, reduction)
         self.full = full
         self.eps = eps
+        self.sign = sign
 
-    def forward(self, var: Tensor, input: Tensor, target: Tensor) -> Tensor:
+    def forward(self, var: Tensor, input: Tensor, target: Tensor, scaling: Tensor) -> Tensor:
         input = input.clone().detach()
-        return F.gaussian_nll_loss(input, target, var, full=self.full, eps=self.eps, reduction=self.reduction)
+        value = F.gaussian_nll_loss(input, target, var, full=self.full, eps=self.eps, reduction="none") * scaling * self.sign
+        if self.reduction == 'mean':
+            return torch.mean(value)
+        elif self.reduction == 'sum':
+            return torch.sum(value)
+        else:
+            raise ValueError("Invalid reduction type")
