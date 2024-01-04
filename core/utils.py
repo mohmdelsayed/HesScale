@@ -13,7 +13,7 @@ from core.learner.sl.adam import AdamLearner
 from core.learner.sl.adam_trust_region import AdamTrustRegionGLearner
 from core.learner.sl.adam_overshooting import AdamWithOvershootingPreventionLearner
 from core.learner.sl.adahg import AdaHGLearner, AdaHGSqrtLearner
-from core.learner.sl.adahesscale import AdaHesScaleLearner
+from core.learner.sl.adahesscale import AdaHesScaleLearner, AdaHesScaleSqrtLearner, AdaHesScaleAdamStyleLearner
 from core.learner.sl.adahesscalegn import AdaHesScaleGNLearner, AdaHesScaleGNSqrtLearner, AdaHesScaleGNAdamStyleLearner
 from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
@@ -55,6 +55,8 @@ learners = {
     "adahg": AdaHGLearner,
     "adahg_sqrt": AdaHGSqrtLearner,
     "adahesscale": AdaHesScaleLearner,
+    "adahesscale_sqrt": AdaHesScaleSqrtLearner,
+    "adahesscale_adamstyle": AdaHesScaleAdamStyleLearner,
     "adahesscalegn": AdaHesScaleGNLearner,
     "adahesscalegn_sqrt": AdaHesScaleGNSqrtLearner,
     "adahesscalegn_adamstyle": AdaHesScaleGNAdamStyleLearner,

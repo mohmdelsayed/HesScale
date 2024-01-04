@@ -102,7 +102,7 @@ class AdaHesScaleGNSqrt(Optimizer):
 
                 exp_avg.mul_(beta1).add_(p.grad.detach_(), alpha=1 - beta1)
                 exp_avg_sq.mul_(beta2).add_(
-                    hess_param.data, alpha=1 - beta2
+                    hess_param.data.abs(), alpha=1 - beta2
                 )
 
                 bias_correction1 = 1 - beta1 ** state["step"]
@@ -158,7 +158,7 @@ class AdaHesScaleGN(Optimizer):
 
                 exp_avg.mul_(beta1).add_(p.grad.detach_(), alpha=1 - beta1)
                 exp_avg_sq.mul_(beta2).add_(
-                    hess_param.data, alpha=1 - beta2
+                    hess_param.data.abs(), alpha=1 - beta2
                 )
 
                 bias_correction1 = 1 - beta1 ** state["step"]
