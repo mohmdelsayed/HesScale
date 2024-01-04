@@ -32,8 +32,8 @@ var_net = torch.nn.Sequential(
 )
 
 # Define loss function
-loss_fn_mu = GaussianNLLLossMu(reduction="mean", eps=1e-6, sign=1.)
-loss_fn_var = GaussianNLLLossVar(reduction="mean", eps=1e-6, sign=1.)
+loss_fn_mu = GaussianNLLLossMu(reduction="mean", eps=1e-6)
+loss_fn_var = GaussianNLLLossVar(reduction="mean", eps=1e-6)
 
 # optimizer = AdaHesScale(
 optimizer = AdaHesScaleGN(
