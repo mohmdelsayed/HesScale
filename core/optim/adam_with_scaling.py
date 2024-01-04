@@ -1,7 +1,7 @@
 from torch.optim.optimizer import Optimizer
 import torch, math
 
-class AdamTrustRegionG(Optimizer):
+class AdamScaled(Optimizer):
     def __init__(
         self,
         params,
@@ -26,7 +26,7 @@ class AdamTrustRegionG(Optimizer):
             lr=lr, beta1=beta1, beta2=beta2, eps=eps, weight_decay=weight_decay, delta=delta, max_scale=max_scale
         )
 
-        super(AdamTrustRegionG, self).__init__(params, defaults)
+        super(AdamScaled, self).__init__(params, defaults)
 
     def step(self, closure=None):
         self.zero_grad()

@@ -1,8 +1,8 @@
 from core.learner.sl.learner import Learner
-from core.optim.adam_trust_region import AdamTrustRegionG
+from core.optim.adam_with_scaling import AdamScaled
 
-class AdamTrustRegionGLearner(Learner):
+class AdamScaledLearner(Learner):
     def __init__(self, network=None, optim_kwargs={}):
-        optimizer = AdamTrustRegionG
-        name = "adam_trust_region_g"
+        optimizer = AdamScaled
+        name = "adam_scaled"
         super().__init__(name, network, optimizer, optim_kwargs)
