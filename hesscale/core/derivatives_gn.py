@@ -277,26 +277,52 @@ class SoftmaxPPOLossDerivativesHesScale:
 
 class GaussianNLLLossMuPPODerivativesHesScale:
     def diag_hessian(self, module, g_inp, g_out):
-        # probs = module.get_prob(module.input0, module.input1, module.input2)
-        # hess_log_mu = -module.input3 / (module.input1 ** 2 + module.eps)
-        # grad_log_mu = -module.input3 * (module.input1 - module.input0) / (module.input1 ** 2 + module.eps)
-        # grad_pi = -module.input0 * probs / (module.input1 ** 2 + module.eps)
-        # diag_H = grad_pi * grad_log_mu + hess_log_mu * probs
-        # if module.reduction == "mean":
-        #     diag_H /= module.input0.shape[0]
-        diag_H = torch.ones_like(module.input0)
+        probs = module.get_prob(module.input0, module.input1, module.input2)
+        
+        old_prob = module.input3
+        adv = module.input4
+        ratio = probs / old_prob
+
+        surr1 = ratio * adv
+        surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
+
+        flag1 = (surr1 < surr2).float()
+        flag2 = (ratio > 1-module.epsilon).float() * (ratio < 1+module.epsilon).float() 
+
+        hess_log_mu = -module.input4 / (module.input1 ** 2 + module.eps)
+        grad_log_mu = module.input4 * (module.input2 - module.input0) / (module.input1 ** 2 + module.eps)
+        grad_pi = (module.input2 - module.input0) * probs / (module.input1 ** 2 + module.eps) # gradient of Gaussin w.r.t mean
+        diag_H = grad_pi * grad_log_mu + hess_log_mu * probs
+        
+        diag_H = diag_H * flag1 + (1-flag1) * flag2 * diag_H
+
+        if module.reduction == "mean":
+            diag_H /= module.input0.shape[0]
         return diag_H.unsqueeze_(0)
 
 class GaussianNLLLossVarPPODerivativesHesScale:
     def diag_hessian(self, module, g_inp, g_out):
-        # probs = module.get_prob(module.input0, module.input1, module.input2)
-        # hess_log_var = module.input3 * (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) / (module.input0 ** 4 + module.eps)
-        # grad_log_var = 0.5 * module.input3 * (((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) / (module.input0 ** 2 + module.eps)
-        # grad_pi = -module.input0 * probs / (module.input1 ** 2 + module.eps)
-        # diag_H = grad_pi * grad_log_var + hess_log_var * probs
-        # if module.reduction == "mean":
-        #     diag_H /= module.input0.shape[0]
-        diag_H = torch.ones_like(module.input0)
+        probs = module.get_prob(module.input1, module.input0, module.input2)
+        
+        old_prob = module.input3
+        adv = module.input4
+        ratio = probs / old_prob
+
+        surr1 = ratio * adv
+        surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
+
+        flag1 = (surr1 < surr2).float()
+        flag2 = (ratio > 1-module.epsilon).float() * (ratio < 1+module.epsilon).float() 
+
+        hess_log_var = module.input4 * (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) / (module.input0 ** 4 + module.eps)
+        grad_log_var = 0.5 * module.input4 * (((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) - 1.0) / (module.input0 ** 2 + module.eps)
+        grad_pi = (probs / (2 * module.input0 ** 2 + module.eps)) * (1.0 + ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) # gradient of Gaussin w.r.t variance
+        diag_H = grad_pi * grad_log_var + hess_log_var * probs
+        
+        diag_H = diag_H * flag1 + (1-flag1) * flag2 * diag_H
+
+        if module.reduction == "mean":
+            diag_H /= module.input0.shape[0]
         return diag_H.unsqueeze_(0)
 
 #############################################
