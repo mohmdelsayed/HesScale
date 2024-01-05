@@ -52,6 +52,7 @@ extend(loss_fn_var)
 # Define input and target
 input = torch.randn(batch_size, n_input)
 target = torch.randn(batch_size, n_output) * 0.0 + 0.5
+scaling = torch.ones(batch_size, n_output)
 
 for i in range(T):
     # Forward pass 
@@ -59,8 +60,8 @@ for i in range(T):
     predicted_var = var_net(input)
 
     # Compute loss
-    loss_mean = loss_fn_mu(predicted_mean, predicted_var, target)
-    loss_var = loss_fn_var(predicted_var, predicted_mean, target)
+    loss_mean = loss_fn_mu(predicted_mean, predicted_var, target, scaling)
+    loss_var = loss_fn_var(predicted_var, predicted_mean, target, scaling)
 
     with backpack(HesScaleGN(), HesScale()):
         loss_mean.backward()
