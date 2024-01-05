@@ -28,8 +28,8 @@ class A2C(ActorCriticLearner):
         if env.action_space_type == 'discrete':
             self.ac_lossf = SoftmaxNLLLoss(reduction='mean')
         else:
-            full = True
-            reduction = 'none'
+            full = False
+            reduction = 'mean'
             self.ac_lossf_mu = GaussianNLLLossMu(full=full, reduction=reduction)
             self.ac_lossf_var = GaussianNLLLossVar(full=full, reduction=reduction)
         self.cr_lossf = torch.nn.MSELoss()
@@ -91,8 +91,9 @@ class A2C(ActorCriticLearner):
             actor_loss = self.ac_lossf(action_prefs, target)
         else:
             var = self.var(torch.ones(acs.shape[0], 1))
-            actor_loss = ((v_rets - vals) * self.ac_lossf_mu(action_prefs, var, acs)).mean()
-            var_loss = ((v_rets - vals) * self.ac_lossf_var(var, action_prefs, acs)).mean()
+            advs = v_rets - vals
+            actor_loss = self.ac_lossf_mu(action_prefs, var, acs, advs)
+            var_loss = self.ac_lossf_var(var, action_prefs, acs, advs)
 
         critic_loss = self.cr_lossf(self.predict(obs), v_rets)
 
