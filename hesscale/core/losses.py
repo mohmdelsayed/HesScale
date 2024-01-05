@@ -4,6 +4,7 @@ from .derivatives import (
     NLLLossDerivativesHesScale,
     GaussianNLLLossMuDerivativesHesScale,
     GaussianNLLLossVarDerivativesHesScale,
+    SoftmaxPPOLossDerivativesHesScale,
 )
 from .hesscale_base import BaseModuleHesScale
 
@@ -38,3 +39,7 @@ class GaussianNLLLossMuHesScale(LossHesScale):
 class GaussianNLLLossVarHesScale(LossHesScale):
     def __init__(self):
         super().__init__(derivatives=GaussianNLLLossVarDerivativesHesScale())
+
+class SoftmaxPPOLLossHesScale(LossHesScale):
+    def __init__(self):
+        super().__init__(derivatives=SoftmaxPPOLossDerivativesHesScale())

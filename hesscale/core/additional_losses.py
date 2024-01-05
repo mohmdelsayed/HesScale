@@ -30,6 +30,33 @@ class SoftmaxNLLLoss(_Loss):
         else:
             raise ValueError("Invalid reduction type")
 
+class SoftmaxPPOLoss(_Loss):
+    def __init__(self, reduction = 'mean', epsilon = 0.2):
+          self.reduction = reduction
+          self.ignore_index = -100
+          self.weight = None
+          self.epsilon = epsilon
+          super(SoftmaxPPOLoss, self).__init__(reduction=reduction)
+
+    def forward(self, action_prefs: Tensor, old_action_prob: Tensor, advantage: Tensor, action: Tensor) -> Tensor:
+        
+        new_action_prob = self.get_prob(action_prefs, action)
+        ratio = new_action_prob / old_action_prob
+
+        surr1 = ratio * advantage
+        surr2 = torch.clamp(ratio, 1.0 - self.epsilon, 1.0 + self.epsilon) * advantage
+
+        if self.reduction == 'mean':
+            return -torch.min(surr1, surr2).mean()
+        elif self.reduction == 'sum':
+            return -torch.min(surr1, surr2).sum()
+        else:
+            raise ValueError("Invalid reduction type")
+    
+    def get_prob(self, action_prefs: Tensor, action:Tensor) -> Tensor:
+        new_prob = F.softmax(action_prefs, dim=1)
+        return torch.gather(new_prob, 1, action)
+    
 class GaussianNLLLossMu(_Loss):
     def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean') -> None:
         super(GaussianNLLLossMu, self).__init__(None, None, reduction)

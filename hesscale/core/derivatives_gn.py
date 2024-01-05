@@ -255,6 +255,25 @@ class GaussianNLLLossVarDerivativesHesScale:
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]
         return diag_H.unsqueeze_(0)
+    
+class SoftmaxPPOLossDerivativesHesScale:
+    def diag_hessian(self, module, g_inp, g_out):
+        new_prob = module.get_prob(module.input0, module.input3)
+        old_prob = module.input1
+        adv = module.input2
+        ratio = new_prob / old_prob
+
+        surr1 = ratio * adv
+        surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
+
+        flag1 = (surr1 < surr2).float()
+        flag2 = (ratio > 1-module.epsilon).float() * (ratio < 1+module.epsilon).float() 
+        derivative = new_prob - new_prob ** 2
+        hessian_diags = derivative - 2 * new_prob * derivative
+        diag_H = (hessian_diags * adv / old_prob) * flag1 + (1-flag1) * flag2 * (hessian_diags * adv / old_prob)
+        if module.reduction == "mean":
+            diag_H /= module.input0.shape[0]
+        return diag_H.unsqueeze_(0)
 
 #############################################
 #              Activations                  #
