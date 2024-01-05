@@ -39,13 +39,13 @@ extend(loss_fn)
 
 # Define input and target
 state = torch.randn(batch_size, n_input)
-advantage = torch.randn(batch_size, 1)
-old_action_log_probs = torch.randn(batch_size, 1)
+advantages = torch.randn(batch_size, 1)
+old_action_probs = torch.randn(batch_size, 1)
 actions = torch.randint(0, n_output, (batch_size, 1))
 
 for i in range(T):
     action_prefs = actor(state)
-    loss = loss_fn(action_prefs, old_action_log_probs, advantage, actions)
+    loss = loss_fn(action_prefs, old_action_probs, advantages, actions)
     with backpack(HesScale(), HesScaleGN()):
         loss.backward()
     optimizer.step()
