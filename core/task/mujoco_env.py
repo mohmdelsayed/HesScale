@@ -1,22 +1,23 @@
 import gym
 from core.task.environment import Environment
 
-class InvertedPendulum(Environment):
+class MujocoEnv(Environment):
     """
-    InvertedPendulum environment.
-    https://gymnasium.farama.org/environments/mujoco/inverted_pendulum/
+    MujocoEnv environment.
+    https://gymnasium.farama.org/environments/mujoco/
     """
 
-    def __init__(self, name="inverted_pendulum"):
-        self.env = gym.make('InvertedPendulum-v2')
+    def __init__(self, name='InvertedPendulum', seed=0):
         self.name = name
-        # self.n_states = 4
-        # self.n_actions = 2
+        self.env = gym.make(f'{name}-v2')
+        self.env.seed(seed)
+        self.n_states = self.env.observation_space.shape[0]
+        self.n_actions = self.env.action_space.shape[0]
         self.action_space_type = 'continuous'
         super().__init__()
 
-    def reset(self, seed=None):
-        return self.env.reset(seed=seed)
+    def reset(self):
+        return self.env.reset()
     
     def step(self, action):
         return self.env.step(action)        
@@ -27,8 +28,11 @@ class InvertedPendulum(Environment):
     def __str__(self) -> str:
         return self.name
     
+    def get_max_episode_steps(self):
+        return self.env._max_episode_steps
+    
 if __name__ == "__main__":
-    env = InvertedPendulum()
+    env = MujocoEnv()
     env.reset()
     for i in range(100):
         # get random action

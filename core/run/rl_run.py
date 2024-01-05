@@ -21,7 +21,10 @@ class RLRun:
         self.n_samples = int(n_samples)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.seed = int(seed)
-        self.env = environments[task](seed=self.seed)
+        if task == 'cartpole':
+            self.env = environments[task](seed=self.seed)
+        else:
+            self.env = environments['mujoco_env'](name=task, seed=self.seed)
 
         self.exp_name = exp_name
         self.optim = optim
@@ -36,6 +39,7 @@ class RLRun:
         ts = []
         return_per_episode = []
         self.learner.setup_env(self.env)
+        self.learner.setup_losses(self.env)
         state = self.env.reset()
         episodic_return = 0.0
         epi_t0 = 0
@@ -88,6 +92,7 @@ if __name__ == "__main__":
         with open(f"finished_{args['learner']}.txt", "a") as f:
             f.write(f"{cmd} time_elapsed: {time.time()-current_time} \n")
     except Exception as e:
+        print(e)
         with open(f"failed_{args['learner']}.txt", "a") as f:
             f.write(f"{cmd} \n")
         with open(f"failed_{args['learner']}_msgs.txt", "a") as f:

@@ -2,7 +2,7 @@ from core.task.stationary_mnist import StationaryMNIST
 from core.task.label_permuted_emnist import LabelPermutedEMNIST
 from core.task.input_permuted_mnist import InputPermutedMNIST
 from core.task.cartpole import CartPole
-from core.task.inverted_pendulum import InvertedPendulum
+from core.task.mujoco_env import MujocoEnv
 
 from core.network.fcn_leakyrelu import FCNLeakyReLU, FCNLeakyReLUSmallWithNoBias, FCNLeakyReLUSmall, FCNLeakyReLUSmallSoftmax
 from core.network.fcn_relu import FCNReLU, FCNReLUSmallWithNoBias, FCNReLUSmall, FCNReLUSmallSoftmax
@@ -29,7 +29,7 @@ tasks = {
 
 environments = {
     "cartpole": CartPole,
-    "inverted_pendulum": InvertedPendulum,
+    "mujoco_env": MujocoEnv,
 }
 
 networks = {

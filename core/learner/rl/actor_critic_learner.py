@@ -1,6 +1,8 @@
 from backpack import extend
 import torch
 
+from hesscale.core.additional_activations import Exponential
+
 class ActorCriticLearner:
     def __init__(self, name, network, optimizer, optim_kwargs, extend=False):
         self.network_cls = network
@@ -27,19 +29,30 @@ class ActorCriticLearner:
         raise NotImplementedError
 
     def setup_env(self, env):
+        self.action_space_type = 'discrete' if env.action_space_type == 'discrete' else 'continuous'
+        n_out = env.n_actions
         if self.extend:
             self.critic = extend(self.network_cls(n_obs=env.n_states, n_outputs=1).to(self.device))
-            self.actor = extend(self.network_cls(n_obs=env.n_states, n_outputs=env.n_actions).to(self.device))
+            self.actor = extend(self.network_cls(n_obs=env.n_states, n_outputs=n_out).to(self.device))
+            if self.action_space_type == 'continuous':
+                self.var = extend(torch.nn.Sequential(torch.nn.Linear(1, n_out, bias=False), Exponential()))
+                self.var[0].weight = torch.nn.Parameter(torch.zeros_like(self.var[0].weight))
         else:
             self.critic = self.network_cls(n_obs=env.n_states, n_outputs=1).to(self.device)
-            self.actor = self.network_cls(n_obs=env.n_states, n_outputs=env.n_actions).to(self.device)
-        self.action_space_type = 'discrete' if env.action_space_type == 'discrete' else 'continous'
+            self.actor = self.network_cls(n_obs=env.n_states, n_outputs=n_out).to(self.device)
+            if self.action_space_type == 'continuous':
+                self.var = torch.nn.Sequential(torch.nn.Linear(1, n_out, bias=False), Exponential())
+                self.var[0].weight = torch.nn.Parameter(torch.zeros_like(self.var[0].weight))
         self.setup_optimizer()
 
     def setup_optimizer(self):
         self.actor_optimizer = self.optimizer_cls(self.actor.parameters(), **self.optim_kwargs)
+        if self.action_space_type == 'continuous':
+            self.var_optimizer = self.optimizer_cls(self.var.parameters(), **self.optim_kwargs)
         self.critic_optimizer = self.optimizer_cls(self.critic.parameters(), **self.optim_kwargs)
 
-    def update_params(self, actor_closure, critic_closure):
+    def update_params(self, actor_closure, critic_closure, var_closure=None):
         self.actor_optimizer.step(actor_closure)
+        if self.action_space_type == 'continuous':
+            self.var_optimizer.step(var_closure)
         self.critic_optimizer.step(critic_closure)

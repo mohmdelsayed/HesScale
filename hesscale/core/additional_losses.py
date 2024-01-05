@@ -39,7 +39,7 @@ class GaussianNLLLossMu(_Loss):
     def forward(self, input: Tensor, var: Tensor, target: Tensor) -> Tensor:
         var = var.clone().detach()
         return F.gaussian_nll_loss(input, target, var, full=self.full, eps=self.eps, reduction=self.reduction)
-    
+
 class GaussianNLLLossVar(_Loss):
     def __init__(self, full: bool = False, eps: float = 1e-6, reduction: str = 'mean') -> None:
         super(GaussianNLLLossVar, self).__init__(None, None, reduction)

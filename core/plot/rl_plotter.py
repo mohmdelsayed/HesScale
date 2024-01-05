@@ -58,6 +58,7 @@ class RLPlotter:
                     optim = data["optimizer"]
 
             ts = ts_list[0]
+            n_seeds = len(seeds)
             configuration_list = np.array(configuration_list).reshape(len(seeds), len(configuration_list[0]) // self.avg_interval, self.avg_interval).mean(axis=-1)
             mean_list = np.array(configuration_list).mean(axis=0)
             std_list = np.array(configuration_list).std(axis=0) / np.sqrt(len(seeds))
@@ -67,8 +68,8 @@ class RLPlotter:
                 plt.ylim([0.0, 2.5])
                 plt.ylabel("Online Loss")
             elif self.what_to_plot == 'returns':
-                plt.ylim([0.0, 550.0])
-                plt.gca().set_ylabel(f'Return\naveraged over\n{len(seeds)} runs', labelpad=50, verticalalignment='center').set_rotation(0)
+                plt.ylim([0.0, 1050.0])
+                plt.gca().set_ylabel(f'Return\naveraged over\n{n_seeds} runs', labelpad=50, verticalalignment='center').set_rotation(0)
                 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
             else:
                 plt.ylim([0.0, 1.0])
@@ -77,13 +78,19 @@ class RLPlotter:
         
         plt.xlabel(f"time step")
         plt.title(f'{self.task_name} - A2C')
-        plt.savefig("plot.pdf", bbox_inches='tight')
+        plt.savefig("plot3.pdf", bbox_inches='tight')
         plt.clf()
 
 
 if __name__ == "__main__":
     what_to_plot = "returns"
-    best_runs = core.best_config.BestConfig("exp4", "cartpole", "fcn_tanh_small", ['a2c', 'a2c'], ['adam', 'adahesscalegn_sqrt']).get_best_run(measure=what_to_plot)
+    # task_name = 'cartpole'
+    task_name = 'InvertedPendulum'
+    learners = ['a2c', 'a2c', 'a2c', 'a2c']
+    # optims = ['adam', 'adahesscalegn_sqrt', 'adahesscalegn', 'adahesscalegn_adamstyle']
+    optims = ['sgd', 'adam', 'adahesscalegn', 'adahesscalegn_adamstyle']
+    best_runs = core.best_config.BestConfig("exp4", task_name, "fcn_tanh_small", learners, optims).get_best_run(measure=what_to_plot)
     print(best_runs)
-    plotter = RLPlotter(best_runs, task_name="cartpole", avg_interval=1, what_to_plot=what_to_plot)
+    # best_runs[1] = best_runs[1].replace('0.0003', '0.0001')
+    plotter = RLPlotter(best_runs, task_name=task_name, avg_interval=1, what_to_plot=what_to_plot)
     plotter.plot()

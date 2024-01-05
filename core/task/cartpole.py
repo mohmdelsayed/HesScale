@@ -11,8 +11,8 @@ class CartPole(Environment):
         self.env = gym.make('CartPole-v1')
         self.env.seed(seed)
         self.name = name
-        self.n_states = 4
-        self.n_actions = 2
+        self.n_states = self.env.observation_space.shape[0]
+        self.n_actions = self.env.action_space.n
         self.action_space_type = 'discrete'
         super().__init__()
 
