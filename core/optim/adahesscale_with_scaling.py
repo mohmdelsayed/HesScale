@@ -1,13 +1,12 @@
 import math
-
-from hesscale import HesScaleGN
+from hesscale import HesScale
+from backpack import backpack
 from torch import zeros_like
 from torch.optim import Optimizer
-from backpack import backpack
 
-class AdaHesScaleGNAdamStyle(Optimizer):
-    method = HesScaleGN()
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
+class AdaHesScaleAdamStyleScaled(Optimizer):
+    method = HesScale()
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-8):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -17,11 +16,12 @@ class AdaHesScaleGNAdamStyle(Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         defaults = dict(
-            lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield
+            lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield, max_scale=max_scale, delta=delta
         )
-        super(AdaHesScaleGNAdamStyle, self).__init__(params, defaults)
+        super(AdaHesScaleAdamStyleScaled, self).__init__(params, defaults)
 
     def step(self, closure=None):
+        trust_region_term = 0.0
         self.zero_grad()
         loss, output = closure()
         with backpack(type(self).method):
@@ -36,6 +36,8 @@ class AdaHesScaleGNAdamStyle(Optimizer):
                     state["exp_avg"] = zeros_like(p.data)
                     # Exponential moving average of Hessian diagonal square values
                     state["exp_avg_sq"] = zeros_like(p.data)
+                    # adahesscale update
+                    state["u"] = zeros_like(p.data)
 
                 exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
 
@@ -56,14 +58,22 @@ class AdaHesScaleGNAdamStyle(Optimizer):
                     group["eps"]
                 )
                 step_size = group["lr"] / bias_correction1
+                
+                state["u"] = step_size * exp_avg / denom
 
-                p.data.addcdiv_(exp_avg, denom, value=-step_size)
+                trust_region_term += (exp_avg_sq.sqrt() * (state["u"] ** 2)).sum()
+
+        for group in self.param_groups:
+            for p in group["params"]:
+                state = self.state[p]
+                scaled_step_size = min(group["max_scale"], math.sqrt(2 * group["delta"] / trust_region_term))
+                p.data.add_(state["u"], alpha=-scaled_step_size)
         return loss, output
     
 
-class AdaHesScaleGNSqrt(Optimizer):
-    method = HesScaleGN()
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
+class AdaHesScaleSqrtScaled(Optimizer):
+    method = HesScale()
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-8):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -73,11 +83,12 @@ class AdaHesScaleGNSqrt(Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         defaults = dict(
-            lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield
+            lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield, max_scale=max_scale, delta=delta
         )
-        super(AdaHesScaleGNSqrt, self).__init__(params, defaults)
+        super(AdaHesScaleSqrtScaled, self).__init__(params, defaults)
 
     def step(self, closure=None):
+        trust_region_term = 0.0
         self.zero_grad()
         loss, output = closure()
         with backpack(type(self).method):
@@ -92,6 +103,8 @@ class AdaHesScaleGNSqrt(Optimizer):
                     state["exp_avg"] = zeros_like(p.data)
                     # Exponential moving average of Hessian diagonal square values
                     state["exp_avg_sq"] = zeros_like(p.data)
+                    # adahesscale update
+                    state["u"] = zeros_like(p.data)
 
                 exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
 
@@ -104,7 +117,6 @@ class AdaHesScaleGNSqrt(Optimizer):
                 exp_avg_sq.mul_(beta2).add_(
                     hess_param.data.abs(), alpha=1 - beta2
                 )
-
                 bias_correction1 = 1 - beta1 ** state["step"]
                 bias_correction2 = 1 - beta2 ** state["step"]
 
@@ -112,14 +124,22 @@ class AdaHesScaleGNSqrt(Optimizer):
                     group["eps"]
                 )
                 step_size = group["lr"] / bias_correction1
+                
+                state["u"] = step_size * exp_avg / denom
 
-                p.data.addcdiv_(exp_avg, denom, value=-step_size)
+                trust_region_term += (exp_avg_sq.sqrt() * (state["u"] ** 2)).sum()
+
+        for group in self.param_groups:
+            for p in group["params"]:
+                state = self.state[p]
+                scaled_step_size = min(group["max_scale"], math.sqrt(2 * group["delta"] / trust_region_term))
+                p.data.add_(state["u"], alpha=-scaled_step_size)
         return loss, output
-    
 
-class AdaHesScaleGN(Optimizer):
-    method = HesScaleGN()
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8):
+
+class AdaHesScaleScaled(Optimizer):
+    method = HesScale()
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-8):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -129,11 +149,12 @@ class AdaHesScaleGN(Optimizer):
         if not 0.0 <= betas[1] < 1.0:
             raise ValueError("Invalid beta parameter at index 1: {}".format(betas[1]))
         defaults = dict(
-            lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield
+            lr=lr, betas=betas, eps=eps, method_field=type(self).method.savefield, max_scale=max_scale, delta=delta
         )
-        super(AdaHesScaleGN, self).__init__(params, defaults)
+        super(AdaHesScaleScaled, self).__init__(params, defaults)
 
     def step(self, closure=None):
+        trust_region_term = 0.0
         self.zero_grad()
         loss, output = closure()
         with backpack(type(self).method):
@@ -148,6 +169,8 @@ class AdaHesScaleGN(Optimizer):
                     state["exp_avg"] = zeros_like(p.data)
                     # Exponential moving average of Hessian diagonal square values
                     state["exp_avg_sq"] = zeros_like(p.data)
+                    # adahesscale update
+                    state["u"] = zeros_like(p.data)
 
                 exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
 
@@ -169,5 +192,13 @@ class AdaHesScaleGN(Optimizer):
                 )
                 step_size = group["lr"] / bias_correction1
 
-                p.data.addcdiv_(exp_avg, denom, value=-step_size)
+                state["u"] = step_size * exp_avg / denom
+
+                trust_region_term += (exp_avg_sq * (state["u"] ** 2)).sum()
+
+        for group in self.param_groups:
+            for p in group["params"]:
+                state = self.state[p]
+                scaled_step_size = min(group["max_scale"], math.sqrt(2 * group["delta"] / trust_region_term))
+                p.data.add_(state["u"], alpha=-scaled_step_size)
         return loss, output
