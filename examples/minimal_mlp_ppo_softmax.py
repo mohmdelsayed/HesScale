@@ -13,7 +13,7 @@ n_input = 4
 n_output = 10
 batch_size = 32
 hidden_size = 32
-lr = 0.00001
+lr = 0.0001
 T = 1
 
 # Define model
@@ -46,6 +46,8 @@ actions = torch.randint(0, n_output, (batch_size, 1))
 for i in range(T):
     action_prefs = actor(state)
     loss = loss_fn(action_prefs, old_action_probs, advantages, actions)
+    optimizer.zero_grad()
+
     with backpack(HesScale(), HesScaleGN()):
         loss.backward()
     optimizer.step()

@@ -14,7 +14,7 @@ n_input = 2
 n_output = 1
 batch_size = 32
 hidden_size = 32
-lr = 0.00001
+lr = 0.0001
 T = 10000
 
 # Define model
@@ -62,6 +62,7 @@ for i in range(T):
     # Compute loss
     loss_mean = loss_fn_mu(predicted_mean, predicted_var, target, scaling)
     loss_var = loss_fn_var(predicted_var, predicted_mean, target, scaling)
+    optimizer.zero_grad()
 
     with backpack(HesScaleGN(), HesScale()):
         loss_mean.backward()
