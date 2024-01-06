@@ -28,6 +28,7 @@ from torch.nn import (
     ZeroPad2d,
     LogSoftmax,
     Softmax,
+    Softplus,
 )
 from .core.additional_losses import SoftmaxNLLLoss, GaussianNLLLossMu, GaussianNLLLossVar, SoftmaxPPOLoss, GaussianNLLLossMuPPO, GaussianNLLLossVarPPO
 from .core.additional_activations import Exponential
@@ -100,6 +101,7 @@ class HesScale(BackpropExtension):
                 SoftmaxPPOLoss: losses.SoftmaxPPOLLossHesScale(),
                 GaussianNLLLossMuPPO: losses.GaussianNLLLossMuPPOLossHesScale(),
                 GaussianNLLLossVarPPO: losses.GaussianNLLLossVarPPOLossHesScale(),
+                Softplus: activations.SoftPlusHesScale(),
             },
         )
 
@@ -144,5 +146,6 @@ class HesScaleGN(BackpropExtension):
                 SoftmaxPPOLoss: losses_gn.SoftmaxPPOLLossHesScale(),
                 GaussianNLLLossMuPPO: losses_gn.GaussianNLLLossMuPPOLossHesScale(),
                 GaussianNLLLossVarPPO: losses_gn.GaussianNLLLossVarPPOLossHesScale(),
+                Softplus: activations_gn.SoftPlusHesScale(),
             },
         )

@@ -28,7 +28,8 @@ var_net = torch.nn.Sequential(
     torch.nn.Linear(n_input, hidden_size),
     torch.nn.Tanh(),
     torch.nn.Linear(hidden_size, n_output),
-    Exponential(),
+    # Exponential(),
+    torch.nn.Softplus(),
 )
 
 # Define loss function

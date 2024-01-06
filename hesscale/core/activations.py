@@ -9,6 +9,7 @@ from .derivatives import (
     SoftmaxDerivativesHesScale,
     TanhDerivativesHesScale,
     ExponentialDerivativesHesScale,
+    SoftPlusDerivativesHesScale
 )
 from .hesscale_base import BaseModuleHesScale
 
@@ -60,3 +61,7 @@ class SoftmaxHesScale(BaseModuleHesScale):
 class ExponentialHesScale(BaseModuleHesScale):
     def __init__(self):
         super().__init__(derivatives=ExponentialDerivativesHesScale())
+
+class SoftPlusHesScale(BaseModuleHesScale):
+    def __init__(self):
+        super().__init__(derivatives=SoftPlusDerivativesHesScale())

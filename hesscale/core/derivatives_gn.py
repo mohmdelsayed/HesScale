@@ -439,6 +439,18 @@ class SigmoidDerivativesHesScale(BaseActivationDerivatives, SigmoidDerivatives):
     def d2f(self, module, g_inp, g_out):
         return zeros_like(module.input0)
 
+class SoftPlusDerivativesHesScale(BaseActivationDerivatives):
+    def __init__(self):
+        super().__init__()
+
+    def hessian_is_zero(self):
+        return False
+
+    def df(self, module, g_inp, g_out):
+        return torch.sigmoid(module.input0)
+
+    def d2f(self, module, g_inp, g_out):
+        return torch.sigmoid(module.input0) * (1.0 - torch.sigmoid(module.input0))
 
 class ExponentialDerivativesHesScale(BaseActivationDerivatives):
     def __init__(self):
