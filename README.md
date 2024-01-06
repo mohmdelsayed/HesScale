@@ -15,6 +15,8 @@ python -m pip install --upgrade pip
 pip install .
 ```
 
+The above command should install the correct versions of gym and mujoco-py packages that run on compute canada. To run experiments on mujoco environments, please copy the [binaries for mujoco version 2.1.0](https://github.com/google-deepmind/mujoco/releases/tag/2.1.0) to `~/.mujoco/mujoco210/`.
+
 ## Run an experiment:
 You need to create a task in `core/task` and write how to run in in `core/run`. You can also add new optimizers in `core/learner` or networks in `core/netowrk`. After that, you can create your experiment script in `experiments/` that specify the task, compared learners, grid search and how to run the task. Here is an example:
 
