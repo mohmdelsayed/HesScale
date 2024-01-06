@@ -41,8 +41,8 @@ class FCNTanhSmall(nn.Sequential):
         self.add_module("act_1", nn.Tanh())
         self.add_module("linear_2", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
         self.add_module("act_2", nn.Tanh())
-        self.add_module("linear_3", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
-        self.add_module("act_3", nn.Tanh())
+        # self.add_module("linear_3", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        # self.add_module("act_3", nn.Tanh())
         self.add_module("linear_4", nn.Linear(in_features=n_hidden_units, out_features=n_outputs))
         for m in self.modules():
             if isinstance(m, nn.Linear):

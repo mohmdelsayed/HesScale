@@ -20,9 +20,9 @@ from core.learner.sl.adahesscalegn_with_scaling import AdaHesScaleGNScaledLearne
 from core.learner.sl.adahesscale_with_scaling import AdaHesScaleScaledLearner, AdaHesScaleSqrtScaledLearner, AdaHesScaleAdamStyleScaledLearner
 from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
-from core.learner.rl.vanilla_sgd import VanillaSGD
-from core.learner.rl.a2c import A2C
-from core.learner.rl.a2c_default import A2CDefault
+
+import core.learner.rl as rl
+import core.optim as opt
 import torch
 
 
@@ -75,9 +75,29 @@ learners = {
     "adahesscalegn_adamstyle_scaled": AdaHesScaleGNAdamStyleScaledLearner,
     "adahessian": AdaHessianLearner,
     "adaggnmc": AdaGGNMCLearner,
-    "vanilla_sgd": VanillaSGD,
-    "a2c": A2C,
-    "a2c_default": A2CDefault,
+    "vanilla_sgd": rl.VanillaSGD,
+    "a2c_default": rl.A2CDefault,
+    "a2c": rl.A2C,
+}
+
+optims = {
+    "sgd": opt.SGD,
+    "adam": opt.Adam,
+    "adam_with_overshooting_prevention": opt.AdamWithOvershootingPrevention,
+    "adam_scaled": opt.AdamScaled,
+    "adam_scaled_sqrt": opt.AdamScaledSqrt,
+    "adahesscale": opt.AdaHesScale,
+    "adahesscale_sqrt": opt.AdaHesScaleSqrt,
+    "adahesscale_adamstyle": opt.AdaHesScaleAdamStyle,
+    "adahesscale_scaled": opt.AdaHesScaleScaled,
+    "adahesscale_sqrt_scaled": opt.AdaHesScaleSqrtScaled,
+    "adahesscale_adamstyle_scaled": opt.AdaHesScaleAdamStyleScaled,
+    "adahesscalegn": opt.AdaHesScaleGN,
+    "adahesscalegn_sqrt": opt.AdaHesScaleGNSqrt,
+    "adahesscalegn_adamstyle": opt.AdaHesScaleGNAdamStyle,
+    "adahesscalegn_scaled": opt.AdaHesScaleGNScaled,
+    "adahesscalegn_sqrt_scaled": opt.AdaHesScaleGNSqrtScaled,
+    "adahesscalegn_adamstyle_scaled": opt.AdaHesScaleGNAdamStyleScaled,
 }
 
 criterions = {
@@ -86,7 +106,7 @@ criterions = {
 }
 
 
-def create_script_generator(hes_dir, save_dir, exp_name, env_dir, learner_name, num_jobs, time='01:00:00', memory='2G'):
+def create_script_generator(hes_dir, save_dir, exp_name, env_dir, learner_name, num_jobs, time='01:00:00', memory='2G', account='rrg-ashique'):
     cmds_file = (save_dir / f'{exp_name}/{learner_name}.txt').resolve()
     cmd = f'''#!/bin/bash
 #SBATCH --signal=USR1@90
@@ -94,7 +114,7 @@ def create_script_generator(hes_dir, save_dir, exp_name, env_dir, learner_name, 
 #SBATCH --mem={memory}\t\t\t# maximum memory 100M per job
 #SBATCH --time={time}\t\t\t# maximum wall time per job in d-hh:mm or hh:mm:ss
 #SBATCH --array=1-{num_jobs}
-#SBATCH --account=rrg-ashique
+#SBATCH --account={account}
 
 cd {hes_dir.resolve()}
 FILE="{cmds_file}"

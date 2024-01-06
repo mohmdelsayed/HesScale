@@ -10,13 +10,8 @@ from hesscale.core.losses_gn import MSELossHesScale
 
 class A2C(ActorCriticLearner):
     def __init__(self, network=None, gamma=0.99, optim='adam', optim_kwargs={}):
-        optimizer = {
-            'sgd': SGD,
-            'adam': Adam,
-            'adahesscalegn_sqrt': AdaHesScaleGNSqrt,
-            'adahesscalegn': AdaHesScaleGN,
-            'adahesscalegn_adamstyle': AdaHesScaleGNAdamStyle,
-        }[optim]
+        from core.utils import optims
+        optimizer = optims[optim]
         name='a2c'
         self.extend = True
         self.gamma = gamma
@@ -54,7 +49,7 @@ class A2C(ActorCriticLearner):
             dist = torch.distributions.Categorical(logits=action_prefs)
         elif self.action_space_type == 'continuous':
             var = self.var(torch.ones(1))
-            dist = torch.distributions.Normal(loc=action_prefs, scale=torch.sqrt(var))
+            dist = torch.distributions.Normal(loc=action_prefs, scale=torch.sqrt(var).maximum(torch.tensor(1e-8)))
         else:
             raise NotImplementedError
         return dist
