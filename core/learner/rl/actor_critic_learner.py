@@ -35,14 +35,12 @@ class ActorCriticLearner:
             self.critic = extend(self.network_cls(n_obs=env.n_states, n_outputs=1).to(self.device))
             self.actor = extend(self.network_cls(n_obs=env.n_states, n_outputs=n_out).to(self.device))
             if self.action_space_type == 'continuous':
-                self.var = extend(torch.nn.Sequential(torch.nn.Linear(1, n_out, bias=False), Exponential()))
-                self.var[0].weight = torch.nn.Parameter(torch.zeros_like(self.var[0].weight))
+                self.var = extend(torch.nn.Sequential(torch.nn.Linear(env.n_states, 64), torch.nn.Tanh(), torch.nn.Linear(64, n_out), Exponential()).to(self.device))
         else:
             self.critic = self.network_cls(n_obs=env.n_states, n_outputs=1).to(self.device)
             self.actor = self.network_cls(n_obs=env.n_states, n_outputs=n_out).to(self.device)
             if self.action_space_type == 'continuous':
-                self.var = torch.nn.Sequential(torch.nn.Linear(1, n_out, bias=False), Exponential())
-                self.var[0].weight = torch.nn.Parameter(torch.zeros_like(self.var[0].weight))
+                self.var = torch.nn.Sequential(torch.nn.Linear(env.n_states, 64), torch.nn.Tanh(), torch.nn.Linear(64, n_out), Exponential()).to(self.device)
         self.setup_optimizer()
 
     def setup_optimizer(self):

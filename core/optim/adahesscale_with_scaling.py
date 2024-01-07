@@ -6,7 +6,7 @@ from torch.optim import Optimizer
 
 class AdaHesScaleAdamStyleScaled(Optimizer):
     method = HesScale()
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-8):
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-4):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -73,7 +73,7 @@ class AdaHesScaleAdamStyleScaled(Optimizer):
 
 class AdaHesScaleSqrtScaled(Optimizer):
     method = HesScale()
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-8):
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-4):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:
@@ -139,7 +139,7 @@ class AdaHesScaleSqrtScaled(Optimizer):
 
 class AdaHesScaleScaled(Optimizer):
     method = HesScale()
-    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-8):
+    def __init__(self, params, lr=1e-5, betas=(0.9, 0.999), eps=1e-8, max_scale=1, delta=1e-4):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if not 0.0 <= eps:

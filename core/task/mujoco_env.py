@@ -1,6 +1,6 @@
 import gym
 from core.task.environment import Environment
-
+from core.task.add_time_info import AddTimeInfo
 class MujocoEnv(Environment):
     """
     MujocoEnv environment.
@@ -10,9 +10,10 @@ class MujocoEnv(Environment):
     def __init__(self, name='InvertedPendulum', seed=0):
         self.name = name
         self.env = gym.make(f'{name}-v2')
+        self.env = AddTimeInfo(self.env)
         self.env.seed(seed)
-        self.n_states = self.env.observation_space.shape[0]
-        self.n_actions = self.env.action_space.shape[0]
+        self.n_states = self.env.obs_space_size
+        self.n_actions = self.env.action_space_size
         self.action_space_type = 'continuous'
         super().__init__()
 

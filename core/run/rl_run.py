@@ -46,7 +46,7 @@ class RLRun:
         for t in range(self.n_samples):
             action = self.learner.act(state)
             next_state, reward, done, _ = self.env.step(action)
-            terminated = done and (t - epi_t0 < self.env.get_max_episode_steps())
+            terminated = done
             self.learner.update(state, action, reward, next_state, terminated)
             state = next_state
             episodic_return += reward

@@ -48,7 +48,7 @@ class A2C(ActorCriticLearner):
         if self.action_space_type == 'discrete':
             dist = torch.distributions.Categorical(logits=action_prefs)
         elif self.action_space_type == 'continuous':
-            var = self.var(torch.ones(1))
+            var = self.var(state)
             dist = torch.distributions.Normal(loc=action_prefs, scale=torch.sqrt(var).maximum(torch.tensor(1e-8)))
         else:
             raise NotImplementedError
@@ -85,7 +85,7 @@ class A2C(ActorCriticLearner):
             target = acs_onehot * (v_rets - vals)
             actor_loss = self.ac_lossf(action_prefs, target)
         else:
-            var = self.var(torch.ones(acs.shape[0], 1))
+            var = self.var(obs)
             advs = v_rets - vals
             actor_loss = self.ac_lossf_mu(action_prefs, var, acs, advs)
             var_loss = self.ac_lossf_var(var, action_prefs, acs, advs)
