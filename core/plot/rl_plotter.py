@@ -1,3 +1,4 @@
+import argparse
 import json
 import matplotlib.pyplot as plt
 import core.best_config
@@ -35,8 +36,9 @@ def bin_episodes(t, G, bin_wid, interval=None):
     return np.array(t_tails), np.array(G_means), np.array(G_stds), np.array(G_stderrs), t_bins, G_bins
 
 class RLPlotter:
-    def __init__(self, best_runs_path, task_name, avg_interval=10000, what_to_plot="losses", plot_id='0'):
+    def __init__(self, best_runs_path, exp_name, task_name, avg_interval=10000, what_to_plot="losses", plot_id='0'):
         self.best_runs_path = best_runs_path
+        self.exp_name = exp_name
         self.avg_interval = avg_interval
         self.task_name = task_name
         self.what_to_plot = what_to_plot
@@ -69,7 +71,7 @@ class RLPlotter:
                 plt.ylim([0.0, 2.5])
                 plt.ylabel("Online Loss")
             elif self.what_to_plot == 'returns':
-                plt.ylim([-500.0, 1050.0])
+                plt.ylim([-700.0, 1750.0])
                 plt.gca().set_ylabel(f'Return\naveraged over\n{n_seeds} runs', labelpad=50, verticalalignment='center').set_rotation(0)
                 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
             else:
@@ -79,11 +81,17 @@ class RLPlotter:
         
         plt.xlabel(f"time step")
         plt.title(f'{self.task_name} - A2C')
-        plt.savefig(f"{self.plot_id}.pdf", bbox_inches='tight')
+        plt_pth = Path(f'plots/{self.exp_name}/{self.plot_id}.pdf')
+        plt_pth.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(plt_pth, bbox_inches='tight')
         plt.clf()
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--i", type=int, required=False, default=0)
+    args = parser.parse_args()
+
     what_to_plot = "returns"
     # task_name = 'cartpole'
     task_name = 'Ant'
@@ -95,13 +103,13 @@ if __name__ == "__main__":
         ['sgd', 'adam_scaled', 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
         ['sgd', 'adam_scaled', 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
     ]
-    i = 4
-    optims = optims_list[i]
+    optims = optims_list[args.i]
     learners = ['a2c' for _ in optims]
-    plot_id = str(i)
+    plot_id = str(args.i)
 
-    best_runs = core.best_config.BestConfig(f"exp4_{task_name}1", task_name, "fcn_tanh_small", learners, optims).get_best_run(measure=what_to_plot)
+    exp_name = f"exp4_{task_name}3"
+    best_runs = core.best_config.BestConfig(exp_name, task_name, "fcn_tanh_small", learners, optims).get_best_run(measure=what_to_plot)
     print(best_runs)
     # best_runs[1] = best_runs[1].replace('0.0003', '0.0001')
-    plotter = RLPlotter(best_runs, task_name=task_name, avg_interval=1, what_to_plot=what_to_plot, plot_id=plot_id)
+    plotter = RLPlotter(best_runs, exp_name, task_name=task_name, avg_interval=1, what_to_plot=what_to_plot, plot_id=plot_id)
     plotter.plot()

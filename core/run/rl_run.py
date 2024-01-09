@@ -7,6 +7,7 @@ import signal
 import traceback
 import time
 from functools import partial
+from mujoco_py.builder import MujocoException
 
 def signal_handler(msg, signal, frame):
     print('Exit signal: ', signal)
@@ -43,24 +44,7 @@ class RLRun:
         state = self.env.reset()
         episodic_return = 0.0
         epi_t0 = 0
-        for t in range(self.n_samples):
-            action = self.learner.act(state)
-            next_state, reward, done, _ = self.env.step(action)
-            terminated = done
-            self.learner.update(state, action, reward, next_state, terminated)
-            state = next_state
-            episodic_return += reward
-            if done:
-                state = self.env.reset()
-                ts.append(t)
-                return_per_episode.append(episodic_return)
-                print(f'{t} ( {t - epi_t0} ) {episodic_return}')
-                episodic_return = 0.0
-                epi_t0 = t
-
         logging_data = {
-                'ts': ts,
-                'returns': return_per_episode,
                 'exp_name': self.exp_name,
                 'task': self.env.name,
                 'learner': self.learner.name,
@@ -70,6 +54,29 @@ class RLRun:
                 'n_samples': self.n_samples,
                 'seed': self.seed,
         }
+        try:
+            for t in range(self.n_samples):
+                action = self.learner.act(state)
+                next_state, reward, done, _ = self.env.step(action)
+                terminated = done
+                self.learner.update(state, action, reward, next_state, terminated)
+                state = next_state
+                episodic_return += reward
+                if done:
+                    state = self.env.reset()
+                    ts.append(t)
+                    return_per_episode.append(episodic_return)
+                    print(f'{t} ( {t - epi_t0} ) {episodic_return}')
+                    episodic_return = 0.0
+                    epi_t0 = t
+
+            logging_data.update({
+                    'ts': ts,
+                    'returns': return_per_episode,
+            })
+        except MujocoException as err:
+            print(err)
+            logging_data.update({'diverged': True})
 
         self.logger.log(**logging_data)
 

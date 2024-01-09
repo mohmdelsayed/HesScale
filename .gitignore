@@ -138,3 +138,5 @@ dmypy.json
 .gitignore
 generated_cmds/
 logs/
+
+slurm-*.out

@@ -21,29 +21,27 @@ time = '1:58:00'
 memory = '1G'
 env = MujocoEnv(name=task)
 
-exp_name = f'exp4_{task}1'
-account = 'rrg-ashique'
-optim = [
-    'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',
-    'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',
-    'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',
-    'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',
-    'sgd', 'adam',
-    'adam_scaled', 'adam_scaled_sqrt',
-]
-
-# exp_name = f'exp4_{task}2'
-# account = 'def-ashique'
+# exp_name = f'exp4_{task}3'
+# account = 'rrg-ashique'
 # optim = [
-#     # 'sgd', 'adam',
+#     'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',
+#     'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',
 #     'adam_scaled', 'adam_scaled_sqrt',
 # ]
+
+exp_name = f'exp4_{task}4'
+account = 'def-ashique'
+optim = [
+    'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',
+    'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',
+    'sgd', 'adam',
+]
 
 a2c_grid = GridSearch(
                 seed=[i for i in range(0, 10)],
                 optim=optim,
-                # lr=[.000003, .00001, .00003, .0001, .0003, .001, .003, .01],
-                lr=[.03, .1, .3, 1.],
+                # lr=[.000003, .00001, .00003, .0001, .0003, .001, .003, .01, .03, .1, .3, 1.],
+                lr=[.000003, .00001, .00003, .0001, .0003, .001, .003, .01],
                 network=[FCNTanhSmall()],
                 n_samples=[n_samples],
     )

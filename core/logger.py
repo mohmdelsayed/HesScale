@@ -1,5 +1,5 @@
 import json
-import os
+from pathlib import Path
 
 
 class Logger:
@@ -11,17 +11,19 @@ class Logger:
     def __init__(self, log_dir="logs"):
         self.log_dir = log_dir
 
-    def log(self, **kwargs):
-        json_object = json.dumps(kwargs, indent=4)
+    def get_log_path(self, **kwargs):
         file_name = ''
         for key, value in kwargs["optimizer_hps"].items():
             file_name += f'{key}_{value}_'
         file_name = file_name[:-1]
         
-        dir = f"{self.log_dir}/{kwargs['exp_name']}/{kwargs['task']}/{kwargs['learner']}/{kwargs['optimizer']}/{kwargs['network']}/{file_name}/"
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        path = Path(f"{self.log_dir}/{kwargs['exp_name']}/{kwargs['task']}/{kwargs['learner']}/{kwargs['optimizer']}/{kwargs['network']}/{file_name}/{kwargs['seed']}.json")
+        return path
 
-        with open(f"{dir}/{kwargs['seed']}.json", "w") as outfile:
+    def log(self, **kwargs):
+        json_object = json.dumps(kwargs, indent=4)
+        path = self.get_log_path(**kwargs)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as outfile:
             outfile.write(json_object)
 
