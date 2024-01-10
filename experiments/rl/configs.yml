@@ -32,7 +32,7 @@
   node_preps:
     - ../../node_preps/environment.sh
   sbatch_args:
-    account: def-ashique
+    account: rrg-ashique
     signal: USR1@90
     cpus-per-task: 12
     mem-per-cpu: 2G

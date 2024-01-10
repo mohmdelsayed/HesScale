@@ -74,7 +74,7 @@ class RLRun:
                     'ts': ts,
                     'returns': return_per_episode,
             })
-        except MujocoException as err:
+        except (ValueError, MujocoException) as err:
             print(err)
             logging_data.update({'diverged': True})
 

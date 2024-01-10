@@ -71,7 +71,8 @@ class RLPlotter:
                 plt.ylim([0.0, 2.5])
                 plt.ylabel("Online Loss")
             elif self.what_to_plot == 'returns':
-                plt.ylim([-700.0, 1750.0])
+                # plt.ylim([-700.0, 1750.0])
+                plt.ylim([-700.0, 12000.0])
                 plt.gca().set_ylabel(f'Return\naveraged over\n{n_seeds} runs', labelpad=50, verticalalignment='center').set_rotation(0)
                 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
             else:
@@ -86,15 +87,12 @@ class RLPlotter:
         plt.savefig(plt_pth, bbox_inches='tight')
         plt.clf()
 
-
-if __name__ == "__main__":
+def make_plots(task_name='Ant', optim_id=0):
     parser = argparse.ArgumentParser()
     parser.add_argument("--i", type=int, required=False, default=0)
     args = parser.parse_args()
 
     what_to_plot = "returns"
-    # task_name = 'cartpole'
-    task_name = 'Ant'
 
     optims_list = [
         ['sgd', 'adam', 'adam_scaled', 'adam_scaled_sqrt',],
@@ -103,13 +101,22 @@ if __name__ == "__main__":
         ['sgd', 'adam_scaled', 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
         ['sgd', 'adam_scaled', 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
     ]
-    optims = optims_list[args.i]
+    optims = optims_list[optim_id]
     learners = ['a2c' for _ in optims]
-    plot_id = str(args.i)
+    plot_id = f'{task_name}_{optim_id}'
 
-    exp_name = f"exp4_{task_name}3"
+    exp_name = f"exp4_Ant5"
     best_runs = core.best_config.BestConfig(exp_name, task_name, "fcn_tanh_small", learners, optims).get_best_run(measure=what_to_plot)
-    print(best_runs)
+    print(plot_id, best_runs)
     # best_runs[1] = best_runs[1].replace('0.0003', '0.0001')
     plotter = RLPlotter(best_runs, exp_name, task_name=task_name, avg_interval=1, what_to_plot=what_to_plot, plot_id=plot_id)
     plotter.plot()
+
+def main():
+    # for task in ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']:
+    for task in ['InvertedDoublePendulum']:
+        for i in range(5):
+            make_plots(task, i)
+
+if __name__ == "__main__":
+    main()

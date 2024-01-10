@@ -1,6 +1,7 @@
 import os
 import json
 import numpy as np
+from torch import sub
 
 import core.plot.rl_plotter
 
@@ -23,13 +24,15 @@ class BestConfig:
             if filter_key is not None:
                 subdirectories = filter(lambda k: filter_key in k, subdirectories)
             for subdirectory in subdirectories:
-                configs[subdirectory] = {}
                 seeds = os.listdir(f'{subdirectory}')
                 configuration_list = []
                 ts_list = []
+                diverged = False
                 for seed in seeds:
                     with open(f"{subdirectory}/{seed}") as json_file:
                         data = json.load(json_file)
+                        diverged = data.get('diverged', False)
+                        if diverged: break
                         if measure == 'returns':
                             n_bins = 100
                             bin_wid = data['n_samples'] // n_bins
@@ -39,9 +42,9 @@ class BestConfig:
                         else:
                             configuration_list.append(data[measure])
 
-                mean_list = np.nan_to_num(np.array(configuration_list), nan=np.iinfo(np.int32).max).mean(axis=-1)
-                configs[subdirectory]["ts"] = ts_list[0]
-                configs[subdirectory]["means"] = mean_list
+                if not diverged:
+                    mean_list = np.nan_to_num(np.array(configuration_list), nan=np.iinfo(np.int32).max).mean(axis=-1)
+                    configs[subdirectory] = {'ts': ts_list[0], 'means': mean_list}
             if measure == "losses":
                 best_configs.append(min(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
             elif measure in ["accuracies", "returns"]:
