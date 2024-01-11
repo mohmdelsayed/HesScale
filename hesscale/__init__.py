@@ -30,7 +30,7 @@ from torch.nn import (
     Softmax,
     Softplus,
 )
-from .core.additional_losses import SoftmaxNLLLoss, GaussianNLLLossMu, GaussianNLLLossVar
+from .core.additional_losses import SoftmaxNLLLoss, GaussianNLLLossMu, GaussianNLLLossVar, SoftmaxPPOLoss, GaussianNLLLossMuPPO, GaussianNLLLossVarPPO
 from .core.additional_activations import Exponential
 
 from .core import (
@@ -98,6 +98,9 @@ class HesScale(BackpropExtension):
                 GaussianNLLLossMu: losses.GaussianNLLLossMuHesScale(),
                 GaussianNLLLossVar: losses.GaussianNLLLossVarHesScale(),
                 Exponential: activations.ExponentialHesScale(),
+                SoftmaxPPOLoss: losses.SoftmaxPPOLLossHesScale(),
+                GaussianNLLLossMuPPO: losses.GaussianNLLLossMuPPOLossHesScale(),
+                GaussianNLLLossVarPPO: losses.GaussianNLLLossVarPPOLossHesScale(),
                 Softplus: activations.SoftPlusHesScale(),
             },
         )
@@ -140,6 +143,9 @@ class HesScaleGN(BackpropExtension):
                 GaussianNLLLossMu: losses_gn.GaussianNLLLossMuHesScale(),
                 GaussianNLLLossVar: losses_gn.GaussianNLLLossVarHesScale(),
                 Exponential: activations_gn.ExponentialHesScale(),
+                SoftmaxPPOLoss: losses_gn.SoftmaxPPOLLossHesScale(),
+                GaussianNLLLossMuPPO: losses_gn.GaussianNLLLossMuPPOLossHesScale(),
+                GaussianNLLLossVarPPO: losses_gn.GaussianNLLLossVarPPOLossHesScale(),
                 Softplus: activations_gn.SoftPlusHesScale(),
             },
         )

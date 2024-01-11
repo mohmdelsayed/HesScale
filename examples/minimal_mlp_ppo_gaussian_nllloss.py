@@ -2,7 +2,7 @@ import torch
 from backpack import backpack, extend
 from optimizers.adahesscale import AdaHesScale
 from optimizers.adahesscalegn import AdaHesScaleGN
-from hesscale.core.additional_losses import GaussianNLLLossMu, GaussianNLLLossVar
+from hesscale.core.additional_losses import GaussianNLLLossMuPPO, GaussianNLLLossVarPPO
 from hesscale.core.additional_activations import Exponential
 from hesscale import HesScale, HesScaleGN
 
@@ -15,7 +15,7 @@ n_output = 1
 batch_size = 32
 hidden_size = 32
 lr = 0.0001
-T = 10000
+T = 1
 
 # Define model
 mu_net = torch.nn.Sequential(
@@ -28,13 +28,12 @@ var_net = torch.nn.Sequential(
     torch.nn.Linear(n_input, hidden_size),
     torch.nn.Tanh(),
     torch.nn.Linear(hidden_size, n_output),
-    # Exponential(),
-    torch.nn.Softplus(),
+    Exponential(),
 )
 
 # Define loss function
-loss_fn_mu = GaussianNLLLossMu(reduction="mean", eps=1e-6)
-loss_fn_var = GaussianNLLLossVar(reduction="mean", eps=1e-6)
+loss_fn_mu = GaussianNLLLossMuPPO(reduction="mean", eps=1e-6)
+loss_fn_var = GaussianNLLLossVarPPO(reduction="mean", eps=1e-6)
 
 # optimizer = AdaHesScale(
 optimizer = AdaHesScaleGN(
@@ -51,24 +50,26 @@ extend(loss_fn_mu)
 extend(loss_fn_var)
 
 # Define input and target
-input = torch.randn(batch_size, n_input)
-target = torch.randn(batch_size, n_output) * 0.0 + 0.5
-scaling = torch.ones(batch_size, n_output)
+state = torch.randn(batch_size, n_input)
+advantages = torch.randn(batch_size, 1)
+old_action_probs = torch.randn(batch_size, 1)
+actions = torch.randint(0, n_output, (batch_size, 1))
 
 for i in range(T):
     # Forward pass 
-    predicted_mean = mu_net(input)
-    predicted_var = var_net(input)
+    predicted_means = mu_net(state)
+    predicted_vars = var_net(state)
 
     # Compute loss
-    loss_mean = loss_fn_mu(predicted_mean, predicted_var, target, scaling)
-    loss_var = loss_fn_var(predicted_var, predicted_mean, target, scaling)
+    loss_mean = loss_fn_mu(predicted_means, predicted_vars, actions, old_action_probs, advantages)
+    loss_var = loss_fn_var(predicted_vars, predicted_means, actions, old_action_probs, advantages)
     optimizer.zero_grad()
 
     with backpack(HesScaleGN(), HesScale()):
         loss_mean.backward()
         loss_var.backward()
     optimizer.step()
-    
-    # expected: mu=0.5, var=0.0
-    print(f"predicted_mean: {round(predicted_mean.detach().mean(0).item(), 3)}", f"predicted_var: {round(predicted_var.detach().squeeze(0).mean(0).item(), 4)}")
+
+    for name, param in mu_net.named_parameters():
+        if param.grad is not None:
+            print(name, param.hesscale_gn.shape)
