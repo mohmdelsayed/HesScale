@@ -1,30 +1,32 @@
 ---
 - arguments:
 
-  - optim: [
+  - torch_threads: 1
+    optim: [
       sgd, adam,
       adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
       adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
-    ]
+      ]
     lr: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01]
     task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
     learner: a2c
     network: fcn_tanh_small
     n_samples: 1000000
-    exp_name: exp4_Ant5
+    exp_name: exp4_Ant6
 
-  # - optim: [
-  #     adam_scaled, adam_scaled_sqrt,
-  #     adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
-  #     adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
-  #   ]
-  #   lr: [.0003, .001, .003, .01, .03, .1, .3, 1.]
-  #   delta: [.00001, .0001, .001]
-  #   task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
-  #   learner: a2c
-  #   network: fcn_tanh_small
-  #   n_samples: 1000000
-  #   exp_name: exp4_Ant5
+  - torch_threads: 1
+    optim: [
+      adam_scaled, adam_scaled_sqrt,
+      adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
+      adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
+      ]
+    lr: [.0003, .001, .003, .01, .03, .1, .3, 1.]
+    delta: [.00001, .0001, .001]
+    task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
+    learner: a2c
+    network: fcn_tanh_small
+    n_samples: 1000000
+    exp_name: exp4_Ant6
 
   script: ../../core/run/rl_run.py
   # admin_args:

@@ -17,7 +17,7 @@ def signal_handler(msg, signal, frame):
     exit(0)
 
 class RLRun:
-    def __init__(self, name='rl_run', n_samples=10000, task='cartpole', exp_name='exp1', learner='vanilla_sgd', save_path="logs", seed=0, network='fcn_relu', optim='adam', **kwargs):
+    def __init__(self, torch_threads=0, name='rl_run', n_samples=10000, task='cartpole', exp_name='exp1', learner='vanilla_sgd', save_path="logs", seed=0, network='fcn_relu', optim='adam', **kwargs):
         self.name = name
         self.n_samples = int(n_samples)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -34,8 +34,11 @@ class RLRun:
         else:
             self.learner = learners[learner](networks[network], optim_kwargs=kwargs)
         self.logger = Logger(save_path)
+        self.torch_threads = int(torch_threads)
 
     def start(self):
+        if self.torch_threads > 0:
+            torch.set_num_threads(self.torch_threads)
         torch.manual_seed(self.seed)
         ts = []
         return_per_episode = []
