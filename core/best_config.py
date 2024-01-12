@@ -45,6 +45,9 @@ class BestConfig:
                 if not diverged:
                     mean_list = np.nan_to_num(np.array(configuration_list), nan=np.iinfo(np.int32).max).mean(axis=-1)
                     configs[subdirectory] = {'ts': ts_list[0], 'means': mean_list}
+            if len(configs) <= 0:
+                print(f'Warning: All runs diverged for {learner} and {optim}')
+                continue
             if measure == "losses":
                 best_configs.append(min(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
             elif measure in ["accuracies", "returns"]:

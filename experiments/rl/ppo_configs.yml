@@ -1,28 +1,28 @@
 ---
 - arguments:
 
+#   - torch_threads: 1
+#     env_id: ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']
+#     optim: [
+#       sgd, adam,
+#       adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
+#       adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
+#       ]
+#     learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01]
+#     total_timesteps: 1000000
+#     exp_name: rl_ppo_0
+
   - torch_threads: 1
     env_id: ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']
     optim: [
-      sgd, adam,
-      adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
-      adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
+      adam_scaled, adam_scaled_sqrt,
+      adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
+      adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
       ]
-    learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01]
+    learning_rate: [.0003, .001, .003, .01, .03, .1, .3, 1.]
+    delta: [.00001, .0001, .001]
     total_timesteps: 1000000
     exp_name: rl_ppo_0
-
-  # - torch_threads: 1
-  #   env_id: ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']
-  #   optim: [
-  #     adam_scaled, adam_scaled_sqrt,
-  #     adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
-  #     adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
-  #     ]
-  #   learning_rate: [.0003, .001, .003, .01, .03, .1, .3, 1.]
-  #   delta: [.00001, .0001, .001]
-  #   total_timesteps: 1000000
-  #   exp_name: rl_ppo_0
 
   script: ../../core/run/ppo_continuous_action.py
   # admin_args:
@@ -30,7 +30,7 @@
   node_preps:
     - ../../node_preps/environment.sh
   sbatch_args:
-    account: rrg-ashique
+    account: def-ashique
     signal: USR1@90
     cpus-per-task: 12
     mem-per-cpu: 2G
