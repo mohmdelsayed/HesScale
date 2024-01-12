@@ -386,19 +386,18 @@ class GaussianNLLLossMuPPODerivativesHesScale:
         old_prob = module.input3
         adv = module.input4
         ratio = probs / old_prob
-
+        action = module.input2
+        mu = module.input0
+        sigma = module.input1
         surr1 = ratio * adv
         surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
 
         flag1 = (surr1 < surr2).float()
         flag2 = (ratio > 1-module.epsilon).float() * (ratio < 1+module.epsilon).float() 
 
-        hess_log_mu = -module.input4 / (module.input1 ** 2 + module.eps)
-        grad_log_mu = module.input4 * (module.input2 - module.input0) / (module.input1 ** 2 + module.eps)
-        grad_pi = (module.input2 - module.input0) * probs / (module.input1 ** 2 + module.eps) # gradient of Gaussin w.r.t mean
-        diag_H = grad_pi * grad_log_mu + hess_log_mu * probs
-        
-        diag_H = diag_H * flag1 + (1-flag1) * flag2 * diag_H
+        grad_mu = (action - mu) * probs / (sigma ** 2 + module.eps)
+        diag_H = ((action - mu) * grad_mu - probs) / (sigma ** 2 + module.eps)
+        diag_H = diag_H * flag1 * adv / old_prob + (1-flag1) * flag2 * diag_H * adv / old_prob
 
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]
@@ -411,6 +410,9 @@ class GaussianNLLLossVarPPODerivativesHesScale:
         old_prob = module.input3
         adv = module.input4
         ratio = probs / old_prob
+        action = module.input2
+        mu = module.input1
+        sigma = module.input0
 
         surr1 = ratio * adv
         surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
@@ -418,12 +420,9 @@ class GaussianNLLLossVarPPODerivativesHesScale:
         flag1 = (surr1 < surr2).float()
         flag2 = (ratio > 1-module.epsilon).float() * (ratio < 1+module.epsilon).float() 
 
-        hess_log_var = module.input4 * (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) / (module.input0 ** 4 + module.eps)
-        grad_log_var = 0.5 * module.input4 * (((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) - 1.0) / (module.input0 ** 2 + module.eps)
-        grad_pi = (probs / (2 * module.input0 ** 2 + module.eps)) * (1.0 + ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) # gradient of Gaussin w.r.t variance
-        diag_H = grad_pi * grad_log_var + hess_log_var * probs
-        
-        diag_H = diag_H * flag1 + (1-flag1) * flag2 * diag_H
+        grad_sigma = 0.5 * probs * (((action - mu) ** 2) / (sigma ** 2 + module.eps) - 1.0) / (sigma ** 2 + module.eps)
+        diag_H = 0.5 * (grad_sigma * (sigma ** 2) - probs) * (((action - mu)**2) / (sigma ** 2 + module.eps) - 1.0) / (sigma ** 4 + module.eps) - 0.5 * probs * ((action - mu) ** 2) / (sigma ** 6 + module.eps)
+        diag_H = diag_H * flag1 * adv / old_prob + (1-flag1) * flag2 * diag_H * adv / old_prob
 
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]

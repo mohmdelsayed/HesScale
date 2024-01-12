@@ -11,7 +11,7 @@ torch.manual_seed(42)
 
 # Define hyperparameters
 n_input = 2
-n_output = 1
+n_output = 6
 batch_size = 32
 hidden_size = 32
 lr = 0.0001
