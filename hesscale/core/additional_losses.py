@@ -114,7 +114,8 @@ class GaussianNLLLossMuPPO(_Loss):
             raise ValueError("Invalid reduction type")
     
     def get_prob(self, predicted_means: Tensor, predicted_vars: Tensor, actions:Tensor) -> Tensor:
-        dist = Normal(predicted_means, predicted_vars.maximum(torch.tensor(1e-8)))
+        action_std = torch.sqrt(predicted_vars)
+        dist = Normal(predicted_means, action_std.maximum(torch.tensor(1e-8)))
         return dist.log_prob(actions).sum(1).exp().unsqueeze(1)
     
 class GaussianNLLLossVarPPO(_Loss):
@@ -140,5 +141,6 @@ class GaussianNLLLossVarPPO(_Loss):
             raise ValueError("Invalid reduction type")
     
     def get_prob(self, predicted_means: Tensor, predicted_vars: Tensor, actions:Tensor) -> Tensor:
-        dist = Normal(predicted_means, predicted_vars.maximum(torch.tensor(1e-8)))
+        action_std = torch.sqrt(predicted_vars)
+        dist = Normal(predicted_means, action_std.maximum(torch.tensor(1e-8)))
         return dist.log_prob(actions).sum(1).exp().unsqueeze(1)

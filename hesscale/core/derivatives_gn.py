@@ -284,7 +284,7 @@ class GaussianNLLLossMuPPODerivativesHesScale:
         ratio = probs / old_prob
         action = module.input2
         mu = module.input0
-        sigma = module.input1
+        sigma = torch.sqrt(module.input1)
         surr1 = ratio * adv
         surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
 
@@ -308,7 +308,7 @@ class GaussianNLLLossVarPPODerivativesHesScale:
         ratio = probs / old_prob
         action = module.input2
         mu = module.input1
-        sigma = module.input0
+        sigma = torch.sqrt(module.input0)
         surr1 = ratio * adv
         surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
 
