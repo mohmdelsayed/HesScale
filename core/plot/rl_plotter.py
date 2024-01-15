@@ -71,8 +71,9 @@ class RLPlotter:
                 plt.ylim([0.0, 2.5])
                 plt.ylabel("Online Loss")
             elif self.what_to_plot == 'returns':
-                plt.ylim([-700.0, 1750.0])
+                # plt.ylim([-700.0, 1750.0])
                 # plt.ylim([-700.0, 12000.0])
+                plt.ylim([-700.0, 4000.0])
                 plt.gca().set_ylabel(f'Return\naveraged over\n{n_seeds} runs', labelpad=50, verticalalignment='center').set_rotation(0)
                 plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
             else:
@@ -123,8 +124,7 @@ def make_plots(task_name='Ant', optim_id=0):
 
 def main():
     # for task in ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']:
-    # for task in ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2']:
-    for task in ['Hopper-v2']:
+    for task in ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']:
         for i in range(5):
             make_plots(task, i)
 

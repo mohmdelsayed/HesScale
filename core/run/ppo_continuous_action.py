@@ -1,8 +1,12 @@
 # docs and experiment results can be found at https://docs.cleanrl.dev/rl-algorithms/ppo/#ppo_continuous_actionpy
+from functools import partial
 import os
 import random
+import signal
+import sys
 import time
 from dataclasses import dataclass
+import traceback
 
 import gym
 from mujoco_py.builder import MujocoException
@@ -19,6 +23,10 @@ from backpack import extend
 from core.logger import Logger
 from hesscale.core.additional_losses import GaussianNLLLossMuPPO, GaussianNLLLossVarPPO
 from hesscale.core.additional_activations import Exponential
+
+class NanNetworkOutputError(Exception):
+    'Raised when network output is nan. It is a proxy for divergence.'
+    pass
 
 @dataclass
 class Args:
@@ -150,13 +158,19 @@ class Agent(nn.Module):
         self.critic = extend(self.critic)
 
     def get_value(self, x):
-        return self.critic(x)
+        val = self.critic(x)
+        if torch.any(torch.isnan(val)):
+            raise NanNetworkOutputError
+        return val
 
     def get_action_and_value(self, x, action=None):
         action_mean = self.actor_mean(x)
         # action_logstd = self.actor_logstd.expand_as(action_mean)
         # action_std = torch.exp(action_logstd)
         action_var = self.actor_var(x)
+        if torch.any(torch.isnan(action_mean)) or torch.any(torch.isnan(action_var)):
+            raise NanNetworkOutputError
+
         action_std = torch.sqrt(action_var)
         probs = Normal(action_mean, action_std.maximum(torch.tensor(1e-8)))
         if action is None:
@@ -164,7 +178,7 @@ class Agent(nn.Module):
         return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x), action_mean, action_var
 
 
-if __name__ == "__main__":
+def main():
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
@@ -405,7 +419,7 @@ if __name__ == "__main__":
                 'ts': ts,
                 'returns': return_per_episode,
         })
-    except (ValueError, MujocoException) as err:
+    except (NanNetworkOutputError, MujocoException) as err:
         print(err)
         logging_data.update({'diverged': True})
 
@@ -439,3 +453,23 @@ if __name__ == "__main__":
 
     envs.close()
     # writer.close()
+
+def signal_handler(msg, signal, frame):
+    print('Exit signal: ', signal)
+    args_str = msg[0]
+    with open(f'timeout_ppo.txt', 'a') as f:
+        f.write(f"{args_str} \n")
+    exit(0)
+
+if __name__ == "__main__":
+    args_str = ' '.join(sys.argv)
+    signal.signal(signal.SIGUSR1, partial(signal_handler, (args_str,)))
+    try:
+        main()
+    except Exception as e:
+        print(e)
+        # with open(f"failed_ppo.txt", "a") as f:
+        #     f.write(f"{cmd} \n")
+        with open(f"failed_ppo_msgs.txt", "a") as f:
+            f.write(f"{args_str} \n")
+            f.write(f"{traceback.format_exc()} \n\n")
