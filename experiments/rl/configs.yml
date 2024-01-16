@@ -1,18 +1,18 @@
 ---
 - arguments:
 
-  - torch_threads: 1
-    optim: [
-      sgd, adam,
-      adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
-      adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
-      ]
-    lr: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01]
-    task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
-    learner: a2c
-    network: fcn_tanh_small
-    n_samples: 1000000
-    exp_name: exp4_Ant6
+#   - torch_threads: 1
+#     optim: [
+#       sgd, adam,
+#       adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
+#       adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
+#       ]
+#     lr: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01]
+#     task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
+#     learner: a2c
+#     network: fcn_tanh_small
+#     n_samples: 1000000
+#     exp_name: rl_a2c_1
 
   - torch_threads: 1
     optim: [
@@ -26,19 +26,24 @@
     learner: a2c
     network: fcn_tanh_small
     n_samples: 1000000
-    exp_name: exp4_Ant6
+    exp_name: rl_a2c_1
 
   script: ../../core/run/rl_run.py
   # admin_args:
   seeds: [0, 9]
   node_preps:
     - ../../node_preps/environment.sh
+    - ../../node_preps/rl.sh
   sbatch_args:
     account: rrg-ashique
     signal: USR1@90
     cpus-per-task: 12
-    mem-per-cpu: 2G
+    mem-per-cpu: 512M
     time: 0-1:58:00
+  source_info:
+    dir: ../../
+    copy: true
+    exclude: ['.*', '__pycache__/', '*.egg-info', 'job_files/', 'srun_errors.txt', 'logs/', 'slurm-*.out', '/envhes/', '/backpack/', '/build/', '/cleanrl/', 'generated_cmds/', 'plots/']
 
   run_type: 'ReinforcementLearningRun'
   description: 'default'

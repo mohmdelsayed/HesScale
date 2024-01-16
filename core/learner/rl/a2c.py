@@ -1,7 +1,7 @@
 import numpy as np
 from backpack import extend
 import torch
-from core.learner.rl.actor_critic_learner import ActorCriticLearner
+from core.learner.rl.actor_critic_learner import ActorCriticLearner, NanNetworkOutputError
 from core.optim.sgd import SGD
 from core.optim.adam import Adam
 from core.optim.adahesscalegn import AdaHesScaleGN, AdaHesScaleGNSqrt, AdaHesScaleGNAdamStyle
@@ -45,10 +45,14 @@ class A2C(ActorCriticLearner):
 
     def dist(self, state):
         action_prefs = self.actor(state)
+        if torch.any(torch.isnan(action_prefs)):
+            raise NanNetworkOutputError
         if self.action_space_type == 'discrete':
             dist = torch.distributions.Categorical(logits=action_prefs)
         elif self.action_space_type == 'continuous':
             var = self.var(state)
+            if torch.any(torch.isnan(var)):
+                raise NanNetworkOutputError
             dist = torch.distributions.Normal(loc=action_prefs, scale=torch.sqrt(var).maximum(torch.tensor(1e-8)))
         else:
             raise NotImplementedError
@@ -80,12 +84,16 @@ class A2C(ActorCriticLearner):
         v_rets = v_rets.view(-1, 1).detach()
 
         action_prefs = self.actor(obs)
+        if torch.any(torch.isnan(action_prefs)):
+            raise NanNetworkOutputError
         if self.action_space_type == 'discrete':
             acs_onehot = torch.nn.functional.one_hot(acs[:, 0].type(torch.int64), num_classes=action_prefs.shape[1]).float()
             target = acs_onehot * (v_rets - vals)
             actor_loss = self.ac_lossf(action_prefs, target)
         else:
             var = self.var(obs)
+            if torch.any(torch.isnan(var)):
+                raise NanNetworkOutputError
             advs = v_rets - vals
             actor_loss = self.ac_lossf_mu(action_prefs, var, acs, advs)
             var_loss = self.ac_lossf_var(var, action_prefs, acs, advs)

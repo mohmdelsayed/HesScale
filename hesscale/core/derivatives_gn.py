@@ -244,14 +244,14 @@ class NLLLossDerivativesHesScale:
 
 class GaussianNLLLossMuDerivativesHesScale:
     def diag_hessian(self, module, g_inp, g_out):
-        diag_H = -module.input3 / (module.input1 ** 2 + module.eps)
+        diag_H = -module.input3 / (module.input1 + module.eps)
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]
         return diag_H.unsqueeze_(0)
 
 class GaussianNLLLossVarDerivativesHesScale:
     def diag_hessian(self, module, g_inp, g_out):
-        diag_H = module.input3 * (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) / (module.input0 ** 4 + module.eps)
+        diag_H = module.input3 * (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 + module.eps) ) / (module.input0 ** 2 + module.eps)
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]
         return diag_H.unsqueeze_(0)

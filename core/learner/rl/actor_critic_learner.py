@@ -3,6 +3,10 @@ import torch
 
 from hesscale.core.additional_activations import Exponential
 
+class NanNetworkOutputError(Exception):
+    'Raised when network output is nan. It is a proxy for divergence.'
+    pass
+
 class ActorCriticLearner:
     def __init__(self, name, network, optimizer, optim_kwargs, extend=False):
         self.network_cls = network
@@ -20,6 +24,8 @@ class ActorCriticLearner:
     
     def predict(self, state):
         value = self.critic(state)
+        if torch.any(torch.isnan(value)):
+            raise NanNetworkOutputError
         return value
 
     def act(self, state):
