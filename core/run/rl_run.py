@@ -1,4 +1,5 @@
 import torch, sys
+from core.learner.rl.actor_critic_learner import NanNetworkOutputError
 from core.utils import environments
 from core.utils import networks, learners
 from core.logger import Logger
@@ -7,6 +8,7 @@ import signal
 import traceback
 import time
 from functools import partial
+
 from mujoco_py.builder import MujocoException
 
 def signal_handler(msg, signal, frame):
@@ -77,7 +79,7 @@ class RLRun:
                     'ts': ts,
                     'returns': return_per_episode,
             })
-        except (ValueError, MujocoException) as err:
+        except (NanNetworkOutputError, MujocoException) as err:
             print(err)
             logging_data.update({'diverged': True})
 
