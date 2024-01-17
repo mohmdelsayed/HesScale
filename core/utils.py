@@ -10,6 +10,7 @@ from core.network.fcn_tanh import FCNTanh, FCNTanhSmallWithNoBias, FCNTanhSmall,
 from core.network.cnn_relu import CNNReLU
 
 from core.learner.sl.sgd import SGDLearner
+from core.learner.sl.sgd_with_scaling import SGDScaledLearner, SGDScaledSqrtLearner
 from core.learner.sl.adam import AdamLearner
 from core.learner.sl.adam_scaled import AdamScaledLearner, AdamScaledSqrtLearner
 from core.learner.sl.adam_overshooting import AdamWithOvershootingPreventionLearner
@@ -19,6 +20,7 @@ from core.learner.sl.adahesscalegn import AdaHesScaleGNLearner, AdaHesScaleGNSqr
 from core.learner.sl.adahesscalegn_with_scaling import AdaHesScaleGNScaledLearner, AdaHesScaleGNSqrtScaledLearner, AdaHesScaleGNAdamStyleScaledLearner
 from core.learner.sl.adahesscale_with_scaling import AdaHesScaleScaledLearner, AdaHesScaleSqrtScaledLearner, AdaHesScaleAdamStyleScaledLearner
 from core.learner.sl.adahessian import AdaHessianLearner
+from core.learner.sl.adahessian_with_scaling import AdaHessianScaledLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
 
 import core.learner.rl as rl
@@ -55,6 +57,8 @@ networks = {
 
 learners = {
     "sgd": SGDLearner,
+    "sgd_scaled": SGDScaledLearner,
+    "sgd_scaled_sqrt": SGDScaledSqrtLearner,
     "adam": AdamLearner,
     "adam_with_overshooting_prevention": AdamWithOvershootingPreventionLearner,
     "adam_scaled": AdamScaledLearner,
@@ -74,6 +78,7 @@ learners = {
     "adahesscalegn_sqrt_scaled": AdaHesScaleGNSqrtScaledLearner,
     "adahesscalegn_adamstyle_scaled": AdaHesScaleGNAdamStyleScaledLearner,
     "adahessian": AdaHessianLearner,
+    "adahessian_scaled": AdaHessianScaledLearner,
     "adaggnmc": AdaGGNMCLearner,
     "vanilla_sgd": rl.VanillaSGD,
     "a2c_default": rl.A2CDefault,

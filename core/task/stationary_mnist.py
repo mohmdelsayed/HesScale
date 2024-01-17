@@ -14,6 +14,7 @@ class StationaryMNIST(Task):
         self.step = 0
         self.n_inputs = 784
         self.n_outputs = 10
+        self.change_freq = 5000
         self.criterion = "cross_entropy"
         super().__init__(name, batch_size)
 
