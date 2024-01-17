@@ -28,6 +28,7 @@ class RLRun:
             self.env = environments[task](seed=self.seed)
         else:
             self.env = environments['mujoco_env'](name=task, seed=self.seed)
+        self.env.normalize()
 
         self.exp_name = exp_name
         self.optim = optim
@@ -47,7 +48,6 @@ class RLRun:
         self.learner.setup_env(self.env)
         self.learner.setup_losses(self.env)
         state = self.env.reset()
-        episodic_return = 0.0
         epi_t0 = 0
         logging_data = {
                 'exp_name': self.exp_name,
@@ -62,17 +62,16 @@ class RLRun:
         try:
             for t in range(self.n_samples):
                 action = self.learner.act(state)
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, done, infos = self.env.step(action)
                 terminated = done
                 self.learner.update(state, action, reward, next_state, terminated)
                 state = next_state
-                episodic_return += reward
                 if done:
                     state = self.env.reset()
                     ts.append(t)
-                    return_per_episode.append(episodic_return)
-                    print(f'{t} ( {t - epi_t0} ) {episodic_return}')
-                    episodic_return = 0.0
+                    ep_ret = float(infos['episode']['r'])
+                    return_per_episode.append(ep_ret)
+                    print(f'{t} ( {t - epi_t0} ) {ep_ret}')
                     epi_t0 = t
 
             logging_data.update({
@@ -104,9 +103,11 @@ if __name__ == "__main__":
         with open(f"finished_{args['learner']}.txt", "a") as f:
             f.write(f"{cmd} time_elapsed: {time.time()-current_time} \n")
     except Exception as e:
-        print(e)
+        tb = traceback.format_exc()
+        print(e, tb)
         with open(f"failed_{args['learner']}.txt", "a") as f:
             f.write(f"{cmd} \n")
         with open(f"failed_{args['learner']}_msgs.txt", "a") as f:
             f.write(f"{cmd} \n")
-            f.write(f"{traceback.format_exc()} \n\n")
+            f.write(f"{e} \n")
+            f.write(f"{tb} \n\n")

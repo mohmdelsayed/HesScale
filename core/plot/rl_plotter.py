@@ -95,23 +95,28 @@ def make_plots(task_name='Ant', optim_id=0):
 
     what_to_plot = "returns"
 
-    # # A2C
-    # exp_name = 'exp4_Ant5'
-    # learner = 'a2c'
-    # network = 'fcn_tanh_small'
+    # A2C
+    exp_name = 'rl_a2c_nonorm'
+    learner = 'a2c'
+    network = 'fcn_tanh_small'
 
-    # PPO
-    exp_name = 'rl_ppo_0'
-    learner = 'ppo'
-    network = 'var_net'
+    # # PPO
+    # exp_name = 'rl_ppo_0'
+    # learner = 'ppo'
+    # network = 'var_net'
 
     optims_list = [
-        ['sgd', 'adam', 'adam_scaled', 'adam_scaled_sqrt',],
-        ['sgd', 'adam', 'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',],
-        ['sgd', 'adam', 'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',],
-        ['sgd', 'adam_scaled', 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
-        ['sgd', 'adam_scaled', 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
+        ['sgd', 'adam', 'adam_scaled'],
     ]
+
+    # optims_list = [
+    #     ['sgd', 'adam', 'adam_scaled', 'adam_scaled_sqrt',],
+    #     ['sgd', 'adam', 'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',],
+    #     ['sgd', 'adam', 'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',],
+    #     ['sgd', 'adam_scaled', 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
+    #     ['sgd', 'adam_scaled', 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
+    # ]
+
     optims = optims_list[optim_id]
     learners = [learner for _ in optims]
     plot_id = f'{task_name}_{optim_id}'
@@ -124,8 +129,9 @@ def make_plots(task_name='Ant', optim_id=0):
 
 def main():
     # for task in ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']:
-    for task in ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']:
-        for i in range(5):
+    # for task in ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']:
+    for task in ['Ant']:
+        for i in range(1):
             make_plots(task, i)
 
 if __name__ == "__main__":

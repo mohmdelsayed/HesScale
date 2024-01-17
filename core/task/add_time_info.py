@@ -13,6 +13,7 @@ class AddTimeInfo(gym.core.Wrapper):
         self.obs_space_size = self.observation_space.shape[0] + 1
         self.action_space_size = self.action_space.shape[0]
         self._max_episode_steps = self.env._max_episode_steps
+        self.observation_space = gym.spaces.Box(-np.inf, np.inf, shape=(self.observation_space.shape[0] + 1,), dtype=np.float64)
 
     def step(self, action):
         obs, rews, terminateds, infos = self.env.step(action)
