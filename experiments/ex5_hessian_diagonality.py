@@ -4,7 +4,7 @@ from core.network.fcn_relu import FCNReLUSmallWithNoBias
 from core.network.fcn_tanh import FCNTanhSmallWithNoBias
 from core.runner import Runner
 from core.task.stationary_mnist import StationaryMNIST
-from core.run.hessian_diagonality import RunHessianDiagonality
+from core.run.hessian_diagonality_hidden import RunHessianHiddenDiagonality
 from core.utils import create_script_generator, create_script_runner, tasks
 
 exp_name = "exp5"
@@ -37,7 +37,7 @@ learners = [
 mode = 'w'
 save_dir = "generated_cmds"
 for learner, grid in zip(learners, grids):
-    runner = Runner(RunHessianDiagonality(), learner, task, grid, exp_name)
+    runner = Runner(RunHessianHiddenDiagonality(), learner, task, grid, exp_name)
     num_jobs = runner.write_cmd(save_dir)
     mode = 'a'
     create_script_generator(save_dir, exp_name, learner.name, num_jobs, time="1:00:00", memory="1G")

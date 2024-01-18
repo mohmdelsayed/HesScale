@@ -16,6 +16,22 @@ class FCNReLU(nn.Sequential):
     def __str__(self):
         return self.name
     
+class FCNReLUSingleHiddenLayer(nn.Sequential):
+    def __init__(self, n_obs=10, n_outputs=10, n_hidden_units=300):
+        super(FCNReLUSingleHiddenLayer, self).__init__()
+        self.name = "fcn_relu_single_hidden_layer"
+        self.n_hidden_units = n_hidden_units
+        self.add_module("0", nn.Linear(in_features=n_obs, out_features=n_hidden_units))
+        self.add_module("1", nn.ReLU())
+        self.add_module("2", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        self.add_module("3", nn.ReLU())
+        self.add_module("4", nn.Linear(in_features=n_hidden_units, out_features=n_outputs))
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                m.reset_parameters()
+
+    def __str__(self):
+        return self.name
 
 class FCNReLUSmallWithNoBias(nn.Sequential):
     def __init__(self, n_obs=10, n_outputs=10, n_hidden_units=32):
