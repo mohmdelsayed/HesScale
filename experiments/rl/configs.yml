@@ -1,19 +1,9 @@
 ---
 - arguments:
 
-#   # testing normalized env
-#   - torch_threads: 1
-#     optim: [sgd, adam, adam_scaled]
-#     lr: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, .03, .1, .3, 1.]
-#     task: ['Ant']
-#     learner: a2c
-#     network: fcn_tanh_small
-#     n_samples: 1000000
-#     exp_name: rl_a2c_nonorm
-
   - torch_threads: 1
     optim: [
-      sgd, adam,
+      sgd, adam, adahessian,
       adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
       adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
       ]
@@ -24,19 +14,19 @@
     n_samples: 2000000
     exp_name: rl_a2c_2
 
-#   - torch_threads: 1
-#     optim: [
-#       adam_scaled, adam_scaled_sqrt,
-#       adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
-#       adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
-#       ]
-#     lr: [.0003, .001, .003, .01, .03, .1, .3, 1.]
-#     delta: [.00001, .0001, .001]
-#     task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
-#     learner: a2c
-#     network: fcn_tanh_small
-#     n_samples: 2000000
-#     exp_name: rl_a2c_2
+  - torch_threads: 1
+    optim: [
+      sgd_scaled, sgd_scaled_sqrt, adam_scaled, adam_scaled_sqrt, adahessian_scaled,
+      adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
+      adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
+      ]
+    lr: [.0003, .001, .003, .01, .03, .1, .3, 1.]
+    delta: [.00001, .0001, .001]
+    task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
+    learner: a2c
+    network: fcn_tanh_small
+    n_samples: 2000000
+    exp_name: rl_a2c_2
 
   script: ../../core/run/rl_run.py
   # admin_args:
@@ -45,7 +35,7 @@
     - ../../node_preps/environment.sh
     - ../../node_preps/rl.sh
   sbatch_args:
-    account: def-ashique
+    account: rrg-ashique
     signal: USR1@90
     cpus-per-task: 12
     mem-per-cpu: 512M

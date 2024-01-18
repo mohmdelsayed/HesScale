@@ -87,10 +87,14 @@ learners = {
 
 optims = {
     "sgd": opt.SGD,
+    "sgd_scaled": opt.SGDScaled,
+    "sgd_scaled_sqrt": opt.SGDScaledSqrt,
     "adam": opt.Adam,
     "adam_with_overshooting_prevention": opt.AdamWithOvershootingPrevention,
     "adam_scaled": opt.AdamScaled,
     "adam_scaled_sqrt": opt.AdamScaledSqrt,
+    "adahessian": opt.AdaHessian,
+    "adahessian_scaled": opt.AdaHessianScaled,
     "adahesscale": opt.AdaHesScale,
     "adahesscale_sqrt": opt.AdaHesScaleSqrt,
     "adahesscale_adamstyle": opt.AdaHesScaleAdamStyle,
