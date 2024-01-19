@@ -100,6 +100,7 @@ class Args:
     torch_threads: int = 0
     optim: str = 'adam'
     delta: float = None
+    eps: float = None
 
 
 def make_env(env_id, idx, capture_video, run_name, gamma, seed=0):
@@ -224,8 +225,8 @@ def main():
     optim_cls = hes_optims[args.optim]
     # optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     optim_kwargs = {'lr': args.learning_rate,}
-    if args.delta is not None:
-        optim_kwargs.update({'delta': args.delta})
+    if args.delta is not None: optim_kwargs.update({'delta': args.delta})
+    if args.eps is not None: optim_kwargs.update({'eps': args.eps})
     ac_mu_optimizer = optim_cls(agent.actor_mean.parameters(), **optim_kwargs)
     ac_var_optimizer = optim_cls(agent.actor_var.parameters(), **optim_kwargs)
     cr_optimizer = optim_cls(agent.critic.parameters(), **optim_kwargs)
