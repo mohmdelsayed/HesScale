@@ -1,0 +1,3 @@
+[submodule "curvlinops"]
+	path = curvlinops
+	url = https://github.com/mohmdelsayed/curvlinops.git
