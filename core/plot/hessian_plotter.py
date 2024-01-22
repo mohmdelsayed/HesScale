@@ -60,7 +60,7 @@ class HessianPlotter:
             rand_dominance = self.compute_diag_dominance(np.random.randn(*Hs_after_avg.shape))
             print("Random Dominance: ", rand_dominance)
 if __name__ == "__main__":
-    best_runs = BestConfig("exp5/stationary_emnist", "fcn_relu_single_hidden_layer", ["adam"]).get_best_run(measure="accuracies")
+    best_runs = BestConfig("exp5/stationary_emnist", "fcn_relu_deeper", ["adam"]).get_best_run(measure="accuracies")
     print(best_runs)
     plotter = HessianPlotter(best_runs, task_name="Hessian on MNIST")
     plotter.hessian_heatmap()
