@@ -18,6 +18,7 @@ class HessianPlotter:
         return np.linalg.norm(np.diag(np.diag(hessian_matrix))) / np.linalg.norm(hessian_matrix)
 
     def hessian_heatmap(self):
+        layer = 0
         for subdir in self.best_runs_path:
             seeds = os.listdir(f'{subdir}')
             Hs_before = []
@@ -28,38 +29,38 @@ class HessianPlotter:
                     Hs_before.append(data["H_before"])
                     Hs_after.append(data["H_after"])
 
-            Hs_before_avg = np.abs(np.array(Hs_before)).mean(axis=0)
+            Hs_before_avg = np.abs(np.array(Hs_before))[:,layer,:,:].mean(axis=0)
             diag_dominance_before = self.compute_diag_dominance(Hs_before_avg)
-            Hs_after_avg = np.abs(np.array(Hs_after)).mean(axis=0)
+            Hs_after_avg = np.abs(np.array(Hs_after))[:,layer,:,:].mean(axis=0)
             diag_dominance_after = self.compute_diag_dominance(Hs_after_avg)
-            
             cmap = plt.cm.get_cmap("RdBu")
             plt.imshow(
                 Hs_before_avg,
-                vmin=np.min(Hs_before_avg),
+                vmin=0.0,
                 vmax=np.max(Hs_before_avg),
                 cmap=cmap,
             )
             plt.colorbar()
             plt.title("Magitudes of Hessian matrix before training")
-            plt.savefig("H_before.pdf", bbox_inches="tight", dpi=600)
+            plt.savefig(f"H_before{layer}.pdf", bbox_inches="tight", dpi=600)
             print("Diag Dominance Before: ", diag_dominance_before)
-
             plt.clf()
 
             plt.imshow(
                 Hs_after_avg,
-                vmin=np.min(Hs_after_avg),
+                vmin=0.0,
                 vmax=np.max(Hs_after_avg),
                 cmap=cmap,
             )
             plt.title("Magitudes of Hessian matrix after training")
             plt.colorbar()
-            plt.savefig("H_after.pdf", bbox_inches="tight", dpi=600)
+            plt.savefig(f"H_after{layer}.pdf", bbox_inches="tight", dpi=600)
             print("Diag Dominance After: ", diag_dominance_after)
 
+            rand_dominance = self.compute_diag_dominance(np.random.randn(*Hs_after_avg.shape))
+            print("Random Dominance: ", rand_dominance)
 if __name__ == "__main__":
-    best_runs = BestConfig("exp5/stationary_mnist", "fcn_relu_single_hidden_layer", ["adam"]).get_best_run(measure="accuracies")
+    best_runs = BestConfig("exp5/stationary_emnist", "fcn_relu_single_hidden_layer", ["adam"]).get_best_run(measure="accuracies")
     print(best_runs)
     plotter = HessianPlotter(best_runs, task_name="Hessian on MNIST")
     plotter.hessian_heatmap()
