@@ -16,6 +16,26 @@ class FCNTanh(nn.Sequential):
     def __str__(self):
         return self.name
 
+class FCNTanhDeeper(nn.Sequential):
+    def __init__(self, n_obs=10, n_outputs=10, n_hidden_units=128):
+        super(FCNTanhDeeper, self).__init__()
+        self.name = "fcn_tanh_deeper"
+        self.n_hidden_units = n_hidden_units
+        self.add_module("0", nn.Linear(in_features=n_obs, out_features=n_hidden_units))
+        self.add_module("1", nn.Tanh())
+        self.add_module("2", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        self.add_module("3", nn.Tanh())
+        self.add_module("4", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        self.add_module("5", nn.Tanh())
+        self.add_module("6", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        self.add_module("7", nn.Tanh())
+        self.add_module("8", nn.Linear(in_features=n_hidden_units, out_features=n_outputs))
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                m.reset_parameters()
+
+    def __str__(self):
+        return self.name
 
 class FCNTanhSmallWithNoBias(nn.Sequential):
     def __init__(self, n_obs=10, n_outputs=10, n_hidden_units=32):

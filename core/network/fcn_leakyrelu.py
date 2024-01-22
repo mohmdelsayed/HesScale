@@ -16,6 +16,26 @@ class FCNLeakyReLU(nn.Sequential):
     def __str__(self):
         return self.name
 
+class FCNLeakyReLUDeeper(nn.Sequential):
+    def __init__(self, n_obs=10, n_outputs=10, n_hidden_units=128):
+        super(FCNLeakyReLUDeeper, self).__init__()
+        self.name = "fcn_leakyrelu_deeper"
+        self.n_hidden_units = n_hidden_units
+        self.add_module("0", nn.Linear(in_features=n_obs, out_features=n_hidden_units))
+        self.add_module("1", nn.LeakyReLU())
+        self.add_module("2", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        self.add_module("3", nn.LeakyReLU())
+        self.add_module("4", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        self.add_module("5", nn.LeakyReLU())
+        self.add_module("6", nn.Linear(in_features=n_hidden_units, out_features=n_hidden_units))
+        self.add_module("7", nn.LeakyReLU())
+        self.add_module("8", nn.Linear(in_features=n_hidden_units, out_features=n_outputs))
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                m.reset_parameters()
+
+    def __str__(self):
+        return self.name
 
 class FCNLeakyReLUSmallWithNoBias(nn.Sequential):
     def __init__(self, n_obs=10, n_outputs=10, n_hidden_units=32):
