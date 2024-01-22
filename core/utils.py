@@ -1,4 +1,5 @@
 from core.task.stationary_mnist import StationaryMNIST
+from core.task.stationary_emnist import StationaryEMNIST
 from core.task.label_permuted_emnist import LabelPermutedEMNIST
 from core.task.input_permuted_mnist import InputPermutedMNIST
 from core.task.cartpole import CartPole
@@ -27,6 +28,7 @@ import torch
 
 tasks = {
     "stationary_mnist" : StationaryMNIST,
+    "stationary_emnist" : StationaryEMNIST,
     "input_permuted_mnist": InputPermutedMNIST,
     "label_permuted_emnist" : LabelPermutedEMNIST,
 }
