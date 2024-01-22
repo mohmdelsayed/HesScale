@@ -17,11 +17,14 @@ def signal_handler(msg, signal, frame):
     exit(0)
 
 def hidden_hessian(loss_func, data, model, batch_size, feature_dim):
-    hessian = ActivationHessianLinearOperator(model, loss_func, ("1", "input", 0), data)
-    H_mat = (hessian @ np.eye(hessian.shape[1])).reshape(batch_size, feature_dim, batch_size, feature_dim)
-    idx = np.arange(batch_size)
-    hessian_matrix = np.abs(H_mat[idx, :, idx, :])
-    return hessian_matrix
+    Hs = []
+    for i in range(1, len(model), 2):
+        hessian = ActivationHessianLinearOperator(model, loss_func, (str(i), "input", 0), data)
+        H_mat = (hessian @ np.eye(hessian.shape[1])).reshape(batch_size, feature_dim, batch_size, feature_dim)
+        idx = np.arange(batch_size)
+        hessian_matrix = np.abs(H_mat[idx, :, idx, :]).mean(0)
+        Hs.append(hessian_matrix.tolist())
+    return Hs
 
 class RunHessianHiddenDiagonality:
     def __init__(self, name='hessian_diagonality_hidden', n_samples=10000, task='stationary_mnist', exp_name='exp1', learner='sgd', save_path="logs", seed=0, network='fcn_relu', **kwargs):
@@ -29,7 +32,7 @@ class RunHessianHiddenDiagonality:
         self.n_samples = int(n_samples)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.task_batch_size_32 = tasks[task](batch_size=32)
-        self.task_batch_size_1000 = tasks[task](batch_size=1000)
+        self.task_batch_size_1000 = tasks[task](batch_size=1)
         self.exp_name = exp_name
         self.learner = learners[learner](networks[network], kwargs)
         self.logger = Logger(save_path)
@@ -51,8 +54,7 @@ class RunHessianHiddenDiagonality:
         # Hessian before training
         input, target = next(self.task_batch_size_1000)
         input, target = input.to(self.device), target.to(self.device)
-        H_before = hidden_hessian(criterion, [(input, target)], self.learner.network, self.task_batch_size_1000.batch_size, self.learner.network.n_hidden_units).mean(axis=0)
-        print(H_before.shape)
+        H_before = hidden_hessian(criterion, [(input, target)], self.learner.network, self.task_batch_size_1000.batch_size, self.learner.network.n_hidden_units)
         # training
         for _ in range(self.n_samples):
             input, target = next(self.task_batch_size_32)
@@ -65,8 +67,7 @@ class RunHessianHiddenDiagonality:
         # Hessian after training
         input, target = next(self.task_batch_size_1000)
         input, target = input.to(self.device), target.to(self.device)
-        H_after = hidden_hessian(criterion, [(input, target)], self.learner.network, self.task_batch_size_1000.batch_size, self.learner.network.n_hidden_units).mean(axis=0)
-        print(H_after.shape)
+        H_after = hidden_hessian(criterion, [(input, target)], self.learner.network, self.task_batch_size_1000.batch_size, self.learner.network.n_hidden_units)
 
         logging_data = {
                 'losses': losses_per_step_size,
@@ -77,8 +78,8 @@ class RunHessianHiddenDiagonality:
                 'optimizer_hps': self.learner.optim_kwargs,
                 'n_samples': self.n_samples,
                 'seed': self.seed,
-                'H_before': H_before.tolist(),
-                'H_after': H_after.tolist(),
+                'H_before': H_before,
+                'H_after': H_after,
         }
 
         if self.task_batch_size_32.criterion == 'cross_entropy':
