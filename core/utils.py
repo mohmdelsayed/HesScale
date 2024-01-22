@@ -5,7 +5,7 @@ from core.task.input_permuted_mnist import InputPermutedMNIST
 from core.task.cartpole import CartPole
 
 from core.network.fcn_leakyrelu import FCNLeakyReLU, FCNLeakyReLUSmallWithNoBias, FCNLeakyReLUSmall, FCNLeakyReLUSmallSoftmax
-from core.network.fcn_relu import FCNReLU, FCNReLUSmallWithNoBias, FCNReLUSmall, FCNReLUSmallSoftmax, FCNReLUSingleHiddenLayer
+from core.network.fcn_relu import FCNReLU, FCNReLUSmallWithNoBias, FCNReLUSmall, FCNReLUSmallSoftmax, FCNReLUDeeper
 from core.network.fcn_tanh import FCNTanh, FCNTanhSmallWithNoBias, FCNTanhSmall, FCNTanhSmallSoftmax
 from core.network.cnn_relu import CNNReLU
 
@@ -39,7 +39,7 @@ environments = {
 
 networks = {
     "fcn_relu": FCNReLU,
-    "fcn_relu_single_hidden_layer": FCNReLUSingleHiddenLayer,
+    "fcn_relu_deeper": FCNReLUDeeper,
     "fcn_relu_small": FCNReLUSmall,
     "fcn_relu_small_softmax": FCNReLUSmallSoftmax,
     "fcn_relu_small_no_bias": FCNReLUSmallWithNoBias,

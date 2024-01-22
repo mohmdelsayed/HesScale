@@ -16,10 +16,10 @@ class FCNReLU(nn.Sequential):
     def __str__(self):
         return self.name
     
-class FCNReLUSingleHiddenLayer(nn.Sequential):
+class FCNReLUDeeper(nn.Sequential):
     def __init__(self, n_obs=10, n_outputs=10, n_hidden_units=128):
-        super(FCNReLUSingleHiddenLayer, self).__init__()
-        self.name = "fcn_relu_single_hidden_layer"
+        super(FCNReLUDeeper, self).__init__()
+        self.name = "fcn_relu_deeper"
         self.n_hidden_units = n_hidden_units
         self.add_module("0", nn.Linear(in_features=n_obs, out_features=n_hidden_units))
         self.add_module("1", nn.ReLU())
