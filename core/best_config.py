@@ -1,5 +1,6 @@
 import os
 import json
+import copy
 import numpy as np
 from torch import sub
 
@@ -13,7 +14,7 @@ class BestConfig:
         self.learners = learners
         self.optims = optims
     
-    def get_best_run(self, measure="losses", filter_key=None):
+    def get_best_run(self, cache, measure="losses", filter_key=None):
         best_configs = []
         for learner, optim in zip(self.learners, self.optims):
             path = f"logs/{self.exp_name}/{self.task_name}/{learner}/{optim}/{self.network_name}/"
@@ -29,18 +30,25 @@ class BestConfig:
                 ts_list = []
                 diverged = False
                 for seed in seeds:
-                    with open(f"{subdirectory}/{seed}") as json_file:
-                        data = json.load(json_file)
-                        diverged = data.get('diverged', False)
-                        if diverged: break
-                        if measure == 'returns':
-                            n_bins = 100
-                            bin_wid = data['n_samples'] // n_bins
-                            ts, rets, _, _, _, _ = core.plot.rl_plotter.bin_episodes(np.array(data['ts']), np.array(data[measure]), bin_wid)
-                            ts_list.append(ts[:n_bins])
-                            configuration_list.append(rets[:n_bins])
-                        else:
-                            configuration_list.append(data[measure])
+                    key = f'{subdirectory}/{seed}'.split('experiments/rl/')[1]
+                    data = cache.get(key)
+                    if data is None:
+                        with open(f"{subdirectory}/{seed}") as json_file:
+                            data = json.load(json_file)
+                    diverged = data.get('diverged', False)
+                    if diverged: break
+                    if measure == 'returns':
+                        n_bins = 100
+                        bin_wid = data['n_samples'] // n_bins
+                        ts, rets, _, _, _, _ = core.plot.rl_plotter.bin_episodes(np.array(data['ts']), np.array(data[measure]), bin_wid)
+                        if not cache.has(key):
+                            data_copy = copy.deepcopy(data)
+                            data_copy.update({'ts': ts.tolist(), measure: rets.tolist()})
+                            cache.set(key, data_copy)
+                        ts_list.append(ts[:n_bins])
+                        configuration_list.append(rets[:n_bins])
+                    else:
+                        configuration_list.append(data[measure])
 
                 if not diverged:
                     mean_list = np.nan_to_num(np.array(configuration_list), nan=np.iinfo(np.int32).max).mean(axis=-1)
