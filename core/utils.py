@@ -21,6 +21,7 @@ from core.learner.sl.adahesscale_with_scaling import AdaHesScaleScaledLearner, A
 from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adahessian_with_scaling import AdaHessianScaledLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
+from core.learner.sl.adaggnmc_with_scaling import AdaGGNMCScaledLearner
 from core.learner.rl.vanilla_sgd import VanillaSGD
 import torch
 
@@ -76,6 +77,7 @@ learners = {
     "adahessian": AdaHessianLearner,
     "adahessian_scaled": AdaHessianScaledLearner,
     "adaggnmc": AdaGGNMCLearner,
+    "adaggnmc_scaled": AdaGGNMCScaledLearner,
     "vanilla_sgd": VanillaSGD,
 }
 
