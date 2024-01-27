@@ -5,11 +5,12 @@
 #     env_id: ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']
 #     optim: [
 #       # sgd,
-#       adam, adahessian,
-#       adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
-#       adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
+#       # adam, adahessian,
+#       # adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
+#       # adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
+#       adaggnmc,
 #       ]
-#     learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01]
+#     learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, 1.]
 #     eps: [.00001]
 #     total_timesteps: 2000000
 #     exp_name: rl_ppo_3
@@ -17,20 +18,18 @@
   - torch_threads: 1
     env_id: ['Ant-v2', 'Walker2d-v2', 'HalfCheetah-v2', 'Hopper-v2', 'InvertedDoublePendulum-v2']
     optim: [
-      sgd_scaled, sgd_scaled_sqrt,
+      # sgd_scaled, sgd_scaled_sqrt,
       # adam_scaled,
       # adam_scaled_sqrt, adahessian_scaled,
       # adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
       # adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
-
-      # adahesscale_adamstyle_scaled, adahesscalegn_adamstyle_scaled,
-      # adahesscale_scaled, adahesscale_sqrt_scaled,
-      # adahesscalegn_scaled, adahesscalegn_sqrt_scaled,
+      # adaggnmc_scaled,
+      adam_hesscale,
       ]
     # learning_rate: [.0003, .001, .003, .01, .03, .1, .3, 1.]
     learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, 1.]
-    delta: [.00000001, .00001, .0001, .001]
-    # eps: [.00001]
+    delta: [.00000001, .00001]
+    eps: [.00001]
     total_timesteps: 2000000
     exp_name: rl_ppo_3
 

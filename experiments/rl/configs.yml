@@ -1,38 +1,41 @@
 ---
 - arguments:
 
-  - torch_threads: 1
-    optim: [
-      sgd,
-      # adam, adahessian,
-      # adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
-      # adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
-      ]
-    lr: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, 1.]
-    # eps: [.00001]
-    task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
-    learner: a2c
-    network: fcn_tanh_small
-    n_samples: 2000000
-    exp_name: rl_a2c_5
-
 #   - torch_threads: 1
 #     optim: [
-#       sgd_scaled, sgd_scaled_sqrt,
-#       # adam_scaled, adam_scaled_sqrt, adahessian_scaled,
-#       # adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
-#       # adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
+#       # sgd,
+#       # adam, adahessian,
+#       # adahesscale, adahesscale_sqrt, adahesscale_adamstyle,
+#       # adahesscalegn, adahesscalegn_sqrt, adahesscalegn_adamstyle,
+#       adaggnmc,
 #       ]
-#     # lr: [.0003, .001, .003, .01, .03, .1, .3, 1.]
 #     lr: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, 1.]
-#     # delta: [.00000001, .00001, .0001, .001]
-#     delta: [.00000001, .00001]
-#     # eps: [.00001]
+#     eps: [.00001]
 #     task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
 #     learner: a2c
 #     network: fcn_tanh_small
 #     n_samples: 2000000
 #     exp_name: rl_a2c_5
+
+  - torch_threads: 1
+    optim: [
+      # sgd_scaled, sgd_scaled_sqrt,
+      # adam_scaled, adam_scaled_sqrt, adahessian_scaled,
+      # adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
+      # adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
+      # adaggnmc_scaled,
+      adam_hesscale,
+      ]
+    # lr: [.0003, .001, .003, .01, .03, .1, .3, 1.]
+    lr: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, 1.]
+    # delta: [.00000001, .00001, .0001, .001]
+    delta: [.00000001, .00001]
+    eps: [.00001]
+    task: ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
+    learner: a2c
+    network: fcn_tanh_small
+    n_samples: 2000000
+    exp_name: rl_a2c_5
 
   script: ../../core/run/rl_run.py
   # admin_args:
@@ -41,7 +44,7 @@
     - ../../node_preps/environment.sh
     - ../../node_preps/rl.sh
   sbatch_args:
-    account: def-ashique
+    account: rrg-ashique
     signal: USR1@90
     cpus-per-task: 12
     mem-per-cpu: 512M
