@@ -29,6 +29,7 @@ class MujocoEnv(Environment):
 
     def normalize(self):
         self.env = gym.wrappers.RecordEpisodeStatistics(self.env)
+        self.env = gym.wrappers.ClipAction(self.env)
         self.env = gym.wrappers.NormalizeObservation(self.env)
         self.env = gym.wrappers.TransformObservation(self.env, lambda obs: np.clip(obs, -10, 10))
         self.env = gym.wrappers.NormalizeReward(self.env, gamma=0.99)

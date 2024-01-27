@@ -22,10 +22,14 @@
       # adam_scaled_sqrt, adahessian_scaled,
       # adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
       # adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
+
+      # adahesscale_adamstyle_scaled, adahesscalegn_adamstyle_scaled,
+      # adahesscale_scaled, adahesscale_sqrt_scaled,
+      # adahesscalegn_scaled, adahesscalegn_sqrt_scaled,
       ]
     # learning_rate: [.0003, .001, .003, .01, .03, .1, .3, 1.]
-    learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01]
-    delta: [.00001, .0001, .001]
+    learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, 1.]
+    delta: [.00000001, .00001, .0001, .001]
     # eps: [.00001]
     total_timesteps: 2000000
     exp_name: rl_ppo_3
@@ -33,17 +37,17 @@
 #   # 20M-step runs
 #   - torch_threads: 1
 #     env_id: ['Ant-v2']
-#     # delta: [.000001, .00001, .0001, .001]
+#     delta: [.000001, .00001, .0001, .001]
 #     optim: [
-#       sgd,
+#       # sgd,
 #       # sgd_scaled, sgd_scaled_sqrt,
 #       # adam, adahessian,
-#       # adam_scaled, adam_scaled_sqrt, adahessian_scaled,
-#       # adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
-#       # adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
+#       adam_scaled, adam_scaled_sqrt, adahessian_scaled,
+#       adahesscale_scaled, adahesscale_sqrt_scaled, adahesscale_adamstyle_scaled,
+#       adahesscalegn_scaled, adahesscalegn_sqrt_scaled, adahesscalegn_adamstyle_scaled,
 #       ]
 #     learning_rate: [.000003, .00001, .00003, .0001, .0003, .001, .003, .01, .03, .1, .3, 1.]
-#     # eps: [.00001]
+#     eps: [.00001]
 #     total_timesteps: 20000000
 #     exp_name: rl_ppo_4
 
@@ -63,7 +67,7 @@
   source_info:
     dir: ../../
     copy: true
-    exclude: ['.*', '__pycache__/', '*.egg-info', 'job_files/', 'srun_errors.txt', 'logs/', 'slurm-*.out', '/envhes/', '/backpack/', '/build/', '/cleanrl/', 'generated_cmds/', 'plots/']
+    exclude: ['.*', '__pycache__/', '*.egg-info', 'job_files/', 'srun_errors.txt', 'logs/', 'slurm-*.out', '/envhes/', '/backpack/', '/build/', '/cleanrl/', '/SenseAct/', 'generated_cmds/', 'plots/']
 
   run_type: 'ReinforcementLearningRun'
   description: 'default'
