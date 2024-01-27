@@ -348,14 +348,14 @@ class NLLLossDerivativesHesScale:
 
 class GaussianNLLLossMuDerivativesHesScale:
     def diag_hessian(self, module, g_inp, g_out):
-        diag_H = -module.input3 / (module.input1 ** 2 + module.eps)
+        diag_H = -module.input3 / (module.input1 + module.eps)
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]
         return (diag_H.unsqueeze_(0), LOSS)
 
 class GaussianNLLLossVarDerivativesHesScale:
     def diag_hessian(self, module, g_inp, g_out):
-        diag_H = module.input3 * (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 ** 2 + module.eps) ) / (module.input0 ** 4 + module.eps)
+        diag_H = module.input3 * (0.5 -  ((module.input2 - module.input1) ** 2) / (module.input0 + module.eps) ) / (module.input0 ** 2 + module.eps)
         if module.reduction == "mean":
             diag_H /= module.input0.shape[0]
         return (diag_H.unsqueeze_(0), LOSS)
@@ -388,7 +388,7 @@ class GaussianNLLLossMuPPODerivativesHesScale:
         ratio = probs / old_prob
         action = module.input2
         mu = module.input0
-        sigma = module.input1
+        sigma = torch.sqrt(module.input1)
         surr1 = ratio * adv
         surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
 
@@ -412,7 +412,7 @@ class GaussianNLLLossVarPPODerivativesHesScale:
         ratio = probs / old_prob
         action = module.input2
         mu = module.input1
-        sigma = module.input0
+        sigma = torch.sqrt(module.input0)
 
         surr1 = ratio * adv
         surr2 = torch.clamp(ratio, 1.0 - module.epsilon, 1.0 + module.epsilon) * adv
@@ -420,8 +420,8 @@ class GaussianNLLLossVarPPODerivativesHesScale:
         flag1 = (surr1 < surr2).float()
         flag2 = (ratio > 1-module.epsilon).float() * (ratio < 1+module.epsilon).float() 
 
-        grad_sigma = 0.5 * probs * (((action - mu) ** 2) / (sigma ** 2 + module.eps) - 1.0) / (sigma ** 2 + module.eps)
-        diag_H = 0.5 * (grad_sigma * (sigma ** 2) - probs) * (((action - mu)**2) / (sigma ** 2 + module.eps) - 1.0) / (sigma ** 4 + module.eps) - 0.5 * probs * ((action - mu) ** 2) / (sigma ** 6 + module.eps)
+        grad_sigma_sq = 0.5 * probs * (((action - mu) ** 2) / (sigma ** 2 + module.eps) - 1.0) / (sigma ** 2 + module.eps)
+        diag_H = 0.5 * (grad_sigma_sq * (sigma ** 2) - probs) * (((action - mu)**2) / (sigma ** 2 + module.eps) - 1.0) / (sigma ** 4 + module.eps) - 0.5 * probs * ((action - mu) ** 2) / (sigma ** 6 + module.eps)
         diag_H = diag_H * flag1 * adv / old_prob + (1-flag1) * flag2 * diag_H * adv / old_prob
 
         if module.reduction == "mean":
