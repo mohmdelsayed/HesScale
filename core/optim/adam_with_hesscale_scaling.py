@@ -48,10 +48,12 @@ class AdamHesScale(Optimizer):
                     state["exp_avg"] = torch.zeros_like(p.data)
                     # Exponential moving average of gradient^2 values
                     state["exp_avg_sq"] = torch.zeros_like(p.data)
+                    # Exponential moving average of HesScale values
+                    state["exp_avg_hesscale"] = torch.zeros_like(p.data)
                     # adam update
                     state["u"] = torch.zeros_like(p.data)
 
-                exp_avg, exp_avg_sq = state["exp_avg"], state["exp_avg_sq"]
+                exp_avg, exp_avg_sq, exp_avg_hesscale = state["exp_avg"], state["exp_avg_sq"], state["exp_avg_hesscale"]
 
                 beta1, beta2 = group["beta1"], group["beta2"]
 
@@ -67,6 +69,7 @@ class AdamHesScale(Optimizer):
                 exp_avg_sq.mul_(beta2).add_(
                     p.grad.data ** 2, alpha=1 - beta2
                 )
+                exp_avg_hesscale.mul_(beta2).add_(hess_param.data ** 2, alpha=1 - beta2)
                 bias_correction1 = 1 - beta1 ** state["step"]
                 bias_correction2 = 1 - beta2 ** state["step"]
 
@@ -77,7 +80,7 @@ class AdamHesScale(Optimizer):
                 
                 state["u"] = step_size * exp_avg / denom
 
-                trust_region_term += (hess_param.data.abs() * (state["u"] ** 2)).sum()
+                trust_region_term += (exp_avg_hesscale.sqrt() * (state["u"] ** 2)).sum()
 
         for group in self.param_groups:
             for p in group["params"]:
