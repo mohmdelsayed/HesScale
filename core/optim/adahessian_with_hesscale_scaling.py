@@ -133,10 +133,12 @@ class AdaHessianHesScaleScaled(Optimizer):
                 state['exp_avg'] = torch.zeros_like(p.data)
                 # Exponential moving average of Hessian diagonal square values
                 state['exp_hessian_diag_sq'] = torch.zeros_like(p.data)
+                # Exponential moving average of HesScale values
+                state["exp_avg_hesscale"] = torch.zeros_like(p.data)
                 # AdaHessian update
                 state["u"] = torch.zeros_like(p.data)
 
-            exp_avg, exp_hessian_diag_sq = state['exp_avg'], state['exp_hessian_diag_sq']
+            exp_avg, exp_hessian_diag_sq, exp_avg_hesscale = state['exp_avg'], state['exp_hessian_diag_sq'], state["exp_avg_hesscale"]
 
             beta1 = group['beta1']
             beta2 = group['beta2']
@@ -147,6 +149,7 @@ class AdaHessianHesScaleScaled(Optimizer):
             # Decay the first and second moment running average coefficient
             exp_avg.mul_(beta1).add_(grad.detach_() + group['weight_decay'] * p.data, alpha=1 - beta1)
             exp_hessian_diag_sq.mul_(beta2).addcmul_(hut_trace, hut_trace, value=1 - beta2)
+            exp_avg_hesscale.mul_(beta2).add_(hess_param.data ** 2, alpha=1 - beta2)
 
             bias_correction1 = 1 - beta1 ** state['step']
             bias_correction2 = 1 - beta2 ** state['step']
@@ -158,7 +161,7 @@ class AdaHessianHesScaleScaled(Optimizer):
                 group['eps'])
 
             state["u"] = (group["lr"] * (exp_avg/bias_correction1) / denom + group['weight_decay'] * p.data)
-            trust_region_term += (hess_param.data.abs() * (state["u"] ** 2)).sum()
+            trust_region_term += (exp_avg_hesscale.sqrt() * (state["u"] ** 2)).sum()
 
         for group in self.param_groups:
             for p in group["params"]:

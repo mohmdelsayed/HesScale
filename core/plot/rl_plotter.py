@@ -2,6 +2,7 @@ import argparse
 import json
 import copy
 import matplotlib.pyplot as plt
+from numpy.ma import alltrue
 import core.best_config
 import os
 import re
@@ -136,35 +137,39 @@ class RLPlotter:
         plt.savefig(plt_pth, bbox_inches='tight')
         plt.clf()
 
-def make_plots(cache, task_name='Ant', optim_id=0, ylim=[-700.0, 4000.0]):
+def make_plots(cache, task_name='Ant', optim_id=0):
     parser = argparse.ArgumentParser()
     parser.add_argument("--i", type=int, required=False, default=0)
     args = parser.parse_args()
 
     what_to_plot = "returns"
 
-    # A2C
-    exp_name = 'rl_a2c_3'
-    learner = 'a2c'
-    network = 'fcn_tanh_small'
+    # # A2C
+    # exp_name = 'rl_a2c_5'
+    # learner = 'a2c'
+    # network = 'fcn_tanh_small'
 
-#     # PPO
-#     exp_name = 'rl_ppo_4'
-#     learner = 'ppo'
-#     network = 'var_net'
+    # PPO
+    exp_name = 'rl_ppo_4'
+    learner = 'ppo'
+    network = 'var_net'
+    # filter_key = None #'delta_1e-08'
+    filter_key = 'lr_0.0001'
 
     # optims_list = [
     #     ['sgd', 'adam', 'adam_scaled'],
     # ]
 
     optims_list = [
-        ['sgd', 'adam', 'adam_scaled', 'adam_scaled_sqrt',],
-        ['sgd', 'adam', 'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',],
-        ['sgd', 'adam', 'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',],
-        ['sgd', 'adam_scaled', 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
-        ['sgd', 'adam_scaled', 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
-        ['sgd', 'adam', 'adahessian',],
-        ['sgd_scaled', 'sgd_scaled_sqrt', 'adam_scaled', 'adam_scaled_sqrt', 'adahessian_scaled',],
+        # ['sgd', 'adam', 'adam_scaled', 'adam_scaled_sqrt',],
+        # ['sgd', 'adam', 'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',],
+        # ['sgd', 'adam', 'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',],
+        # ['sgd', 'adam_scaled', 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
+        # ['sgd', 'adam_scaled', 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
+        # ['sgd', 'adam', 'adahessian',],
+        # ['sgd_scaled', 'sgd_scaled_sqrt', 'adam_scaled', 'adam_scaled_sqrt', 'adahessian_scaled',],
+
+        ['adam', 'adam_scaled', 'adahesscale_adamstyle', 'adahesscale_adamstyle_scaled'],
     ]
 
 #     optims_list = [
@@ -176,11 +181,14 @@ def make_plots(cache, task_name='Ant', optim_id=0, ylim=[-700.0, 4000.0]):
     if 'ppo' in exp_name:
         task_name += '-v2'
 
+    ylim_high = 8000. if 'ppo' in exp_name else 4000.
+    ylim = [-700., ylim_high] if task_name != 'InvertedDoublePendulum' else [-700., 12000.]
+
     optims = optims_list[optim_id]
     learners = [learner for _ in optims]
-    plot_id = f'{task_name}_{optim_id}'
+    plot_id = f'{task_name}_{optim_id}_lr_0.0001'
 
-    best_runs = core.best_config.BestConfig(exp_name, task_name, network, learners, optims).get_best_run(cache, measure=what_to_plot)
+    best_runs = core.best_config.BestConfig(exp_name, task_name, network, learners, optims).get_best_run(cache, measure=what_to_plot, filter_key=filter_key)
     print(plot_id, best_runs)
     # lr1_runs = [re.sub(r'lr_.*', 'lr_1.0', run) for run in best_runs]
     # best_runs = list(itertools.chain(*[[r1, r2] for r1, r2 in zip(best_runs, lr1_runs)]))
@@ -188,14 +196,12 @@ def make_plots(cache, task_name='Ant', optim_id=0, ylim=[-700.0, 4000.0]):
     plotter.plot(cache)
 
 def plot_learning_curves(cache):
-    for task in ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']:
-    # for task in ['Ant']:
-        # ylim = [-700., 4000.] if task != 'InvertedDoublePendulum' else [-700., 12000.]
-        ylim = [-700., 8000.] if task != 'InvertedDoublePendulum' else [-700., 12000.]
-        for i in range(7):
+    # for task in ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']:
+    for task in ['Ant']:
+        for i in range(1):
             # if i in [1, 2]:
             #     continue
-            make_plots(cache, task, i, ylim=ylim)
+            make_plots(cache, task, i)
 
 def plot_line(ax, xs, seed_ys, label='', color='C0', linestyle='-'):
     # ys dimension should be (nseeds, len(xs))
@@ -259,34 +265,41 @@ def get_sensitivity(cache, exp_name, learner, network, optim, task, seeds, filte
 
 def plot_sensitivity(cache):
     optims = [
-        'sgd', 'sgd_scaled', 'sgd_scaled_sqrt', 'adam', 'adam_scaled', 'adam_scaled_sqrt', 'adahessian', 'adahessian_scaled',
-        'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',
-        'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',
-        'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',
-        'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',
+        # 'sgd', 'sgd_scaled', 'sgd_scaled_sqrt', 'adam', 'adam_scaled', 'adam_scaled_sqrt', 'adahessian', 'adahessian_scaled',
+        # 'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',
+        # 'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',
+        # 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',
+        # 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',
 
         # 'adahesscale_adamstyle_scaled', 'adahesscalegn_adamstyle_scaled',
         # 'adam'
+
+        # 'adam', 'adam_scaled', 'adahesscale_adamstyle', 'adahesscale_adamstyle_scaled',
+
+        'adam_hesscale', 'adam_scaled',
     ]
 
     # tasks = ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
-    tasks = ['Ant']
+    tasks = ['InvertedPendulum', 'Swimmer', 'Reacher', 'Humanoid', 'HumanoidStandup']
+    # tasks = ['Ant']
     # tasks = ['Hopper']
     # ylim = [-700., 4000.] if task != 'InvertedDoublePendulum' else [-700., 12000.]
     # ylim = [-700., 3000.]
-    ylim = [-700., 8000.]
+    # ylim = [-700., 8000.]
+    ylim = [-700., 2000.]
 
     # deltas = [.00001, .0001, .001]
-    deltas = [.000001, .00001, .0001]
-    # deltas = [.00000001, .00001, .0001]
+    # deltas = [.000001, .00001, .0001]
+    deltas = [.00000001, .00001]
+    # deltas = [.00000001, .000001, .00001]
 
-    # # A2C
-    # exp_name = 'rl_a2c_3'
-    # learner = 'a2c'
-    # network = 'fcn_tanh_small'
+#     # A2C
+#     exp_name = 'rl_a2c_3'
+#     learner = 'a2c'
+#     network = 'fcn_tanh_small'
 
     # PPO
-    exp_name = 'rl_ppo_4'
+    exp_name = 'rl_ppo_3'
     learner = 'ppo'
     network = 'var_net'
 
@@ -298,14 +311,14 @@ def plot_sensitivity(cache):
 
         print(optim)
         # n_cols, figsize = (3, (10., 2.4)) if 'scaled' in optim else (1, (7.767, 4.8))
-        n_cols, figsize = (3, (10., 2.4)) if 'scaled' in optim else (1, (7.767, 4.8))
+        n_cols, figsize = (3, (10., 2.4)) if ('scaled' in optim and len(deltas) > 1) or optim == 'adam_hesscale' else (1, (7.767, 4.8))
         fig, axes = plt.subplots(1, n_cols)
         axes = np.array([axes]) if not isinstance(axes, np.ndarray) else axes.flatten()
         fig.set_size_inches(*figsize)
         for clr_id, task in enumerate(tasks):
             if 'ppo' in exp_name:
                 task = task + '-v2'
-            if 'scaled' in optim:
+            if 'scaled' in optim or optim == 'adam_hesscale':
                 for ax, delta in zip(axes, deltas):
                     lrs, seed_ys = get_sensitivity(cache, exp_name, learner, network, optim, task, seeds, filter_key=f'delta_{delta}')
                     plot_line(ax, lrs, seed_ys, label=task, color=colors[clr_id])
@@ -324,14 +337,105 @@ def plot_sensitivity(cache):
         fig.suptitle(f'{optim} - {learner}')
         fig.tight_layout()
 
-        plt_pth = Path(f'plots/{exp_name}_sensit_largelr/{optim}.pdf')
+        plt_pth = Path(f'plots/{exp_name}_sensit_largelr/{optim}_{tasks[0]}.pdf')
         plt_pth.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(plt_pth, bbox_inches='tight')
+
+def limits_union(l1, l2=None):
+    if l2 is None:
+        return l1
+    else:
+        return (np.minimum(l1[0], l2[0]), np.maximum(l1[1], l2[1]))
+
+def plot_3_optim_sensitivity(cache, optim='a2c', legend=True, alltasks=False):
+    optims = [
+        'adam_hesscale', 'adahessian_hesscale_scaled', 'adahesscale_adamstyle_scaled',
+    ]
+
+    tasks = ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'Humanoid']
+    if alltasks:
+        tasks += ['InvertedPendulum', 'InvertedDoublePendulum', 'Swimmer', 'Reacher', 'HumanoidStandup']
+    ylim = [-700., 2000.]
+
+    delta = .00000001
+
+    if optim == 'a2c':
+        # A2C
+        exp_name = 'rl_a2c_5'
+        learner = 'a2c'
+        network = 'fcn_tanh_small'
+    else:
+        # PPO
+        exp_name = 'rl_ppo_3'
+        learner = 'ppo'
+        network = 'var_net'
+
+    n_cols, figsize = (3, (10., 2.4))
+    fig, axes = plt.subplots(1, n_cols)
+    axes = np.array([axes]) if not isinstance(axes, np.ndarray) else axes.flatten()
+    fig.set_size_inches(*figsize)
+
+    seeds = np.arange(10)
+    colors = [plt.get_cmap('tab10')(i) for i in np.arange(10)]
+    for clr_id, task in enumerate(tasks):
+        print(task)
+        if 'ppo' in exp_name:
+            task = task + '-v2'
+        task_limits = None
+        for ax, optim in zip(axes, optims):
+            if optim == 'adahessian_hesscale_scaled': continue
+            _, seed_ys = get_sensitivity(cache, exp_name, learner, network, optim, task, seeds, filter_key=f'delta_{delta}')
+            ys = seed_ys.mean(axis=0)
+            limits = (np.min(ys[np.logical_not(np.isinf(ys))]), np.max(ys[np.logical_not(np.isinf(ys))]))
+            task_limits = limits_union(limits, task_limits)
+        for ax, optim in zip(axes, optims):
+            if optim == 'adahessian_hesscale_scaled': continue
+            lrs, seed_ys = get_sensitivity(cache, exp_name, learner, network, optim, task, seeds, filter_key=f'delta_{delta}')
+            seed_ys = (seed_ys - task_limits[0]) / (task_limits[1] - task_limits[0])
+            plot_line(ax, lrs, seed_ys, label=task, color=colors[clr_id])
+            ax.set_title(f'{optim}', fontdict={'fontsize': 10}, y=1.05)
+
+    for ax in axes:
+        ax.set_ylim((-.1, 1.2))
+        ax.set_xscale('log')
+        # ylabel = f'Return\naveraged over\nentire period\nand {seeds.shape[0]} runs'
+        # ax.set_ylabel(ylabel, labelpad=50, verticalalignment='center').set_rotation(0)
+        ax.set_ylabel('Average Return')
+        ax.set_xlabel('Learning Rate')
+        ax.label_outer()
+        ax.tick_params(labelsize=6)
+        ax.xaxis.get_offset_text().set_fontsize(6)
+        ax.yaxis.get_offset_text().set_fontsize(6)
+        ax.yaxis.set_offset_position('left')
+
+    if legend:
+        leg_handles, leg_labels = axes[0].get_legend_handles_labels()
+        fig.legend(leg_handles, leg_labels)#, loc=loc)
+    # fig.suptitle(f'{optim} - {learner}')
+    fig.tight_layout()
+
+    algo = 'a2c' if 'a2c' in exp_name else 'ppo'
+    plt_pth = Path(f'plots/{exp_name}_sensit_3_optims/{algo}_legend_{legend}_alltasks_{alltasks}.pdf')
+    plt_pth.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(plt_pth, bbox_inches='tight')
+
+def get_ylim(task):
+    task_id = task.split('-v2')[0]
+    if task_id in ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'Humanoid']:
+        return [-700, 4000]
+    else:
+        return {
+            'InvertedPendulum': [-50, 1100],
+            'InvertedDoublePendulum': [-700, 12000],
+            'Swimmer': [0, 130],
+            'Reacher': [-70, 10],
+            'HumanoidStandup': [0, 200000],
+        }[task_id]
 
 def get_returns(cache, subdir):
     # seeds = os.listdir(f'{subdir}')
     # ts_list, rets_list = [], []
-    n_bins = 100
+    n_bins = 50
     xs, seed_ys = None, np.zeros((10, n_bins))
     # for seed in seeds:
     for seed in np.arange(10):
@@ -356,37 +460,57 @@ def get_returns(cache, subdir):
         # rets_list.append(rets[:n_bins])
     return xs, seed_ys
 
-def plot_4_optims(cache):
-    optims_list = [
-        ['sgd', 'adam', 'adahessian', 'adahesscale_adamstyle',],
-        ['sgd_scaled', 'adam_scaled', 'adahessian_scaled', 'adahesscale_adamstyle_scaled',],
-    ]
+def get_optim_color(optim):
+    noscale_opt = optim.split('_scaled')[0]
+    return {
+        'adam': 'tab:pink',
+        'adahessian': 'tab:brown',
+        'adahesscale_adamstyle': 'tab:green',
+        'adahesscalegn_adamstyle': 'tab:orange',
+        'adam_hesscale': 'tab:blue',
+    }[noscale_opt]
 
-    tasks = ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
+def plot_4_optims(cache, optim='a2c', scaled=False, gn=True, legend=True):
+    if gn:
+        optims_list = [
+            # ['sgd', 'adam', 'adahessian', 'adahesscale_adamstyle',],
+            # ['sgd_scaled', 'adam_scaled', 'adahessian_scaled', 'adahesscale_adamstyle_scaled',],
 
-    delta = .000001
+            ['adam', 'adahessian', 'adahesscale_adamstyle', 'adahesscalegn_adamstyle'],
+            ['adam_scaled', 'adam_hesscale', 'adahessian_scaled', 'adahesscale_adamstyle_scaled', 'adahesscalegn_adamstyle_scaled'],
+        ]
+    else:
+        optims_list = [
+            ['adam', 'adahessian', 'adahesscale_adamstyle'],
+            ['adam_scaled', 'adam_hesscale', 'adahessian_scaled', 'adahesscale_adamstyle_scaled'],
+        ]
 
-#     # A2C
-#     exp_name = 'rl_a2c_3'
-#     learner = 'a2c'
-#     network = 'fcn_tanh_small'
+    # tasks = ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
+    tasks = ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum', 'InvertedPendulum', 'Swimmer', 'Reacher', 'Humanoid', 'HumanoidStandup']
 
-    # PPO
-    exp_name = 'rl_ppo_3'
-    learner = 'ppo'
-    network = 'var_net'
+    delta = .00000001
+
+    if optim == 'a2c':
+        # A2C
+        exp_name = 'rl_a2c_5'
+        learner = 'a2c'
+        network = 'fcn_tanh_small'
+    else:
+        # PPO
+        exp_name = 'rl_ppo_3'
+        learner = 'ppo'
+        network = 'var_net'
 
     filter = False
-    scaled = True
     optims = optims_list[int(scaled)]
 
     seeds = np.arange(10)
     colors = [plt.get_cmap('tab10')(i) for i in np.arange(10)]
     # n_cols, figsize = (3, (10., 2.4)) if 'scaled' in optim else (1, (7.767, 4.8))
-    figsize = (7.767, 4.8)
-    fig, axes = plt.subplots(2, 3)
+    figsize = (10., 4.8)
+    fig, axes = plt.subplots(2, 5)
     axes = np.array([axes]) if not isinstance(axes, np.ndarray) else axes.flatten()
-    fig.delaxes(axes[-1])
+    # fig.delaxes(axes[-1])
     fig.set_size_inches(*figsize)
     for ax, task in zip(axes, tasks):
         print(task)
@@ -398,32 +522,61 @@ def plot_4_optims(cache):
             if filter and 'adahesscale' in optim:
                 filter_key = 'delta_1e-08_eps_1e-05_lr_0.0003' if 'scaled' in optim else 'eps_1e-05_lr_0.0003'
             best_runs = core.best_config.BestConfig(exp_name, task, network, [learner], [optim]).get_best_run(cache, measure='returns', filter_key=filter_key)
+            print(best_runs)
             ts, seed_ys = get_returns(cache, best_runs[0])
-            plot_line(ax, ts, seed_ys, label=optim, color=colors[clr_id])
+            color = get_optim_color(optim)
+            plot_line(ax, ts, seed_ys, label=optim, color=color)
 
-        ax.set_title(f'{task}', fontdict={'fontsize': 10}, y=1.0)
-        ylim = [-700., 4000.] if 'InvertedDoublePendulum' not in task else [-700., 12000.]
+        ax.set_title(f'{task}', fontdict={'fontsize': 10}, y=1.05)
+        # ylim = [-700., 4000.] if 'InvertedDoublePendulum' not in task else [-700., 12000.]
+        ylim = get_ylim(task)
         ax.set_ylim(ylim)
-        ax.set_xscale('log')
-        ylabel = f'Return\naveraged over\nentire period\nand {seeds.shape[0]} runs'
-        ax.set_ylabel(ylabel, labelpad=50, verticalalignment='center').set_rotation(0)
-        ax.label_outer()
+        # ylabel = f'Return\naveraged over\nentire period\nand {seeds.shape[0]} runs'
+        # ax.set_ylabel(ylabel, labelpad=50, verticalalignment='center').set_rotation(0)
+        if ax in axes[[0, 5]]:
+            ax.set_ylabel(f'Average Return')
+        if ax in axes[5:]:
+            ax.set_xlabel('Time Step')
+        # ax.label_outer()
+        ax.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
+        ax.tick_params(labelsize=6)
+        ax.xaxis.get_offset_text().set_fontsize(6)
+        ax.yaxis.get_offset_text().set_fontsize(6)
+        ax.yaxis.set_offset_position('left')
 
-    leg_handles, leg_labels = axes[0].get_legend_handles_labels()
-    fig.legend(leg_handles, leg_labels, loc='lower right')
-    fig.suptitle(f'{learner} - {"scaled" if scaled else "nonscaled"}')
+    if legend:
+        leg_handles, leg_labels = axes[0].get_legend_handles_labels()
+        fig.legend(leg_handles, leg_labels, loc='lower left')
+    # fig.suptitle(f'{learner} - {"scaled" if scaled else "nonscaled"}')
     fig.tight_layout()
 
-    plt_pth = Path(f'plots/{exp_name}_four_optims/{"scaled" if scaled else "nonscaled"}_{"filter" if filter else ""}.pdf')
+    algo = 'a2c' if 'a2c' in exp_name else 'ppo'
+    plt_pth = Path(f'plots/{exp_name}_four_optims/{algo}_{"scaled" if scaled else "nonscaled"}{"_filter" if filter else ""}_{len(tasks)}_gn_{gn}_legend_{legend}.pdf')
     plt_pth.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(plt_pth, bbox_inches='tight')
+    # fig.savefig(plt_pth, bbox_inches='tight')
 
 
 def main():
     cache = Cache(Path('logs.json'))
-    plot_learning_curves(cache)
+    # plot_learning_curves(cache)
     # plot_sensitivity(cache)
-    # plot_4_optims(cache)
+
+    # plot_4_optims(cache, optim='a2c', scaled=False)
+    plot_4_optims(cache, optim='a2c', scaled=True)
+    # plot_4_optims(cache, optim='ppo', scaled=False)
+    plot_4_optims(cache, optim='ppo', scaled=True)
+
+    # for legend in [True, False]:
+    #     plot_4_optims(cache, optim='a2c', scaled=False, gn=True, legend=legend)
+    #     plot_4_optims(cache, optim='ppo', scaled=False, gn=True, legend=legend)
+    #     plot_4_optims(cache, optim='a2c', scaled=False, gn=False, legend=legend)
+    #     plot_4_optims(cache, optim='ppo', scaled=False, gn=False, legend=legend)
+
+    # for legend in [True, False]:
+    #     plot_3_optim_sensitivity(cache, optim='a2c', legend=legend, alltasks=False)
+    #     plot_3_optim_sensitivity(cache, optim='a2c', legend=legend, alltasks=True)
+    #     plot_3_optim_sensitivity(cache, optim='ppo', legend=legend, alltasks=False)
+    #     plot_3_optim_sensitivity(cache, optim='ppo', legend=legend, alltasks=True)
 
 if __name__ == "__main__":
     main()
