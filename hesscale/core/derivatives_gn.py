@@ -458,7 +458,7 @@ class ExponentialDerivativesHesScale(BaseActivationDerivatives):
         return False
 
     def df(self, module, g_inp, g_out):
-        return module.output
+        return torch.clone(module.output)
 
     def d2f(self, module, g_inp, g_out):
         return zeros_like(module.input0)
