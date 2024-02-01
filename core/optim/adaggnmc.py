@@ -45,7 +45,7 @@ class AdaGGNMC(Optimizer):
                 hess_param = getattr(p, group["method_field"]).detach()
 
                 exp_avg.mul_(beta1).add_(p.grad.detach_(), alpha=1 - beta1)
-                exp_hessian_diag.mul_(beta2).add_(hess_param, alpha=1 - beta2)
+                exp_hessian_diag.mul_(beta2).add_(hess_param.data.abs(), alpha=1 - beta2)
 
                 bias_correction1 = 1 - beta1 ** state["step"]
                 bias_correction2 = 1 - beta2 ** state["step"]
