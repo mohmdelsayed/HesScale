@@ -22,6 +22,7 @@ from core.learner.sl.adahesscalegn_with_scaling import AdaHesScaleGNScaledLearne
 from core.learner.sl.adahesscale_with_scaling import AdaHesScaleScaledLearner, AdaHesScaleSqrtScaledLearner, AdaHesScaleAdamStyleScaledLearner
 from core.learner.sl.adahessian import AdaHessianLearner
 from core.learner.sl.adahessian_with_scaling import AdaHessianScaledLearner
+from core.learner.sl.adahessian_with_hesscale_scaling import AdaHessianHesScaleScaledLearner
 from core.learner.sl.adaggnmc import AdaGGNMCLearner
 from core.learner.sl.adaggnmc_with_scaling import AdaGGNMCScaledLearner
 
@@ -82,6 +83,7 @@ learners = {
     "adahesscalegn_adamstyle_scaled": AdaHesScaleGNAdamStyleScaledLearner,
     "adahessian": AdaHessianLearner,
     "adahessian_scaled": AdaHessianScaledLearner,
+    "adahessian_hesscale_scaled": AdaHessianHesScaleScaledLearner,
     "adaggnmc": AdaGGNMCLearner,
     "adaggnmc_scaled": AdaGGNMCScaledLearner,
     "vanilla_sgd": rl.VanillaSGD,
