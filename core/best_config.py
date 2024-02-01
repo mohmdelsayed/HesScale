@@ -30,7 +30,7 @@ class BestConfig:
                 ts_list = []
                 diverged = False
                 for seed in seeds:
-                    key = f'{subdirectory}/{seed}'.split('experiments/rl/')[1]
+                    key = f'{subdirectory}/{seed}'.split('experiments/rl/')[-1]
                     data = cache.get(key)
                     if data is None:
                         with open(f"{subdirectory}/{seed}") as json_file:

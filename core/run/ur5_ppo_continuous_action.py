@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import traceback
 
 import gym
-from mujoco_py.builder import MujocoException
+# from mujoco_py.builder import MujocoException
 import numpy as np
 import torch
 import torch.nn as nn
@@ -126,6 +126,8 @@ def make_env(env_id, idx, capture_video, run_name, gamma, seed=0):
                     accel_max=1,
                     speed_max=1.0,
                     speedj_a=2.0,
+                    # speed_max=0.3,
+                    # speedj_a=1.4,
                     episode_length_time=4.0,
                     episode_length_step=None,
                     actuation_sync_period=1,
@@ -159,23 +161,23 @@ class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+            layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), 64)),
             nn.Tanh(),
             layer_init(nn.Linear(64, 64)),
             nn.Tanh(),
             layer_init(nn.Linear(64, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+            layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), 64)),
             nn.Tanh(),
             layer_init(nn.Linear(64, 64)),
             nn.Tanh(),
-            layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
+            layer_init(nn.Linear(64, np.prod(envs.action_space.shape)), std=0.01),
         )
         self.actor_var = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
+            layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), 64)),
             nn.Tanh(),
-            layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
+            layer_init(nn.Linear(64, np.prod(envs.action_space.shape)), std=0.01),
             Exponential(),
         )
         # self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.single_action_space.shape)))
@@ -241,13 +243,15 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     # env setup
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, seed=args.seed) for i in range(args.num_envs)]
-    )
-    assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
+    # envs = gym.vector.SyncVectorEnv(
+    #     [make_env(args.env_id, i, args.capture_video, run_name, args.gamma, seed=args.seed) for i in range(args.num_envs)]
+    # )
+    # assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
+    envs = make_env(args.env_id, 0, args.capture_video, run_name, args.gamma, seed=args.seed)()
 
     # Start environment processes
-    envs.envs[0].start()
+    # envs.envs[0].start()
+    envs.start()
 
     agent = Agent(envs).to(device)
     from core.utils import optims as hes_optims
@@ -261,8 +265,8 @@ def main():
     cr_optimizer = optim_cls(agent.critic.parameters(), **optim_kwargs)
 
     # ALGO Logic: Storage setup
-    obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
-    actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)
+    obs = torch.zeros((args.num_steps, args.num_envs) + envs.observation_space.shape).to(device)
+    actions = torch.zeros((args.num_steps, args.num_envs) + envs.action_space.shape).to(device)
     logprobs = torch.zeros((args.num_steps, args.num_envs)).to(device)
     rewards = torch.zeros((args.num_steps, args.num_envs)).to(device)
     dones = torch.zeros((args.num_steps, args.num_envs)).to(device)
@@ -271,7 +275,7 @@ def main():
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     start_time = time.time()
-    next_obs = envs.reset()
+    next_obs = np.array([envs.reset()])
     next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
 
@@ -289,7 +293,7 @@ def main():
             'network': 'var_net',
             'optimizer': args.optim,
             'optimizer_hps': optim_kwargs,
-            'n_samples': args.total_timesteps,
+            'n_samples': args.num_iterations * args.batch_size,
             'seed': args.seed,
     }
     logger = Logger(log_dir='logs')
@@ -315,13 +319,15 @@ def main():
 
                 # TRY NOT TO MODIFY: execute the game and log data.
                 next_obs, reward, next_done, infos = envs.step(action.cpu().numpy())
+                next_obs = np.array([next_obs])
+                reward, next_done = np.array([reward]), np.array([next_done])
                 # next_done = np.logical_or(terminations, truncations)
                 rewards[step] = torch.tensor(reward).to(device).view(-1)
                 next_obs, next_done = torch.Tensor(next_obs).to(device), torch.Tensor(next_done).to(device)
 
                 if next_done[0]:
-                    next_obs = torch.Tensor(envs.reset()).to(device)
-                    ep_ret = float(infos[0]['episode']['r'])
+                    next_obs = torch.Tensor(np.array([envs.reset()])).to(device)
+                    ep_ret = float(infos['episode']['r'])
                     ts.append(global_step)
                     return_per_episode.append(ep_ret)
                     print(f"global_step={global_step}, episodic_return={ep_ret}")
@@ -350,9 +356,9 @@ def main():
                 returns = advantages + values
 
             # flatten the batch
-            b_obs = obs.reshape((-1,) + envs.single_observation_space.shape)
+            b_obs = obs.reshape((-1,) + envs.observation_space.shape)
             b_logprobs = logprobs.reshape(-1)
-            b_actions = actions.reshape((-1,) + envs.single_action_space.shape)
+            b_actions = actions.reshape((-1,) + envs.action_space.shape)
             b_advantages = advantages.reshape(-1)
             b_returns = returns.reshape(-1)
             b_values = values.reshape(-1)
@@ -449,9 +455,12 @@ def main():
                 'ts': ts,
                 'returns': return_per_episode,
         })
-    except (NanNetworkOutputError, MujocoException) as err:
+    except NanNetworkOutputError as err:
         print(err)
         logging_data.update({'diverged': True})
+    except Exception as err:
+        env.close()
+        raise
 
     logger.log(**logging_data)
 
@@ -483,6 +492,7 @@ def main():
 
     envs.close()
     # writer.close()
+    sys.exit(0)
 
 def signal_handler(msg, signal, frame):
     print('Exit signal: ', signal)
@@ -497,9 +507,11 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
         print(e)
         # with open(f"failed_ppo.txt", "a") as f:
         #     f.write(f"{cmd} \n")
         with open(f"failed_ppo_msgs.txt", "a") as f:
             f.write(f"{args_str} \n")
-            f.write(f"{traceback.format_exc()} \n\n")
+            f.write(f"{tb} \n\n")
