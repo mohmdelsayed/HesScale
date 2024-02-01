@@ -21,12 +21,12 @@ class AdaHessianHesScaleScaled(Optimizer):
         hessian_power (float, optional): Hessian power (default: 1). You can also try 0.5. For some tasks we found this to result in better performance.
         single_gpu (Bool, optional): Do you use distributed training or not "torch.nn.parallel.DistributedDataParallel" (default: True)
     """
-    def __init__(self, params, lr=0.15, beta1=0.9, beta2=0.999, damping=1e-8, delta=1e-8, max_scale=1.0,
+    def __init__(self, params, lr=0.15, beta1=0.9, beta2=0.999, eps=1e-8, delta=1e-8, max_scale=1.0,
                  weight_decay=0, single_gpu=True):
         if not 0.0 <= lr:
             raise ValueError("Invalid learning rate: {}".format(lr))
-        if not 0.0 <= damping:
-            raise ValueError("Invalid damping value: {}".format(damping))
+        if not 0.0 <= eps:
+            raise ValueError("Invalid eps value: {}".format(eps))
         if not 0.0 <= beta1 < 1.0:
             raise ValueError(
                 "Invalid beta parameter at index 0: {}".format(
@@ -36,7 +36,7 @@ class AdaHessianHesScaleScaled(Optimizer):
                 "Invalid beta parameter at index 1: {}".format(
                     beta2))
 
-        defaults = dict(lr=lr, beta1=beta1, beta2=beta2, eps=damping,
+        defaults = dict(lr=lr, beta1=beta1, beta2=beta2, eps=eps,
                         weight_decay=weight_decay, delta=delta, max_scale=max_scale, method_field=type(self).method.savefield)
         self.single_gpu = single_gpu
         super(AdaHessianHesScaleScaled, self).__init__(params, defaults)

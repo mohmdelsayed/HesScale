@@ -102,6 +102,7 @@ optims = {
     "adam_hesscale": opt.AdamHesScale,
     "adahessian": opt.AdaHessian,
     "adahessian_scaled": opt.AdaHessianScaled,
+    "adahessian_hesscale_scaled": opt.AdaHessianHesScaleScaled,
     "adaggnmc": opt.AdaGGNMC,
     "adaggnmc_scaled": opt.AdaGGNMCScaled,
     "adahesscale": opt.AdaHesScale,
