@@ -1,0 +1,54 @@
+---
+- arguments:
+
+  - torch_threads: 3
+    learner: [
+      sgd,
+      # adam,
+      # adahessian,
+      # adahesscale_adamstyle,
+      # adahesscalegn_adamstyle,
+      # adaggnmc,
+      # bl89,
+      ]
+    lr: [.00001, .0001, .001, .01, .1, 1.]
+    # lr: [.00001]
+    task: 'cifar-100'
+
+    # network: '3c3d'
+    # batch_size: 128
+    # # n_epochs: 200
+    # # exp_name: sl_3c3d
+    # n_epochs: 2000
+    # exp_name: sl_3c3d_long
+
+    network: 'allcnn'
+    batch_size: 256
+    # n_epochs: 350
+    # exp_name: sl_allcnn
+    n_epochs: 3500
+    exp_name: sl_allcnn_long
+
+  script: ../../core/run/sl_run.py
+  # admin_args:
+  seeds: [0, 9]
+  # seeds: [10, 29]
+  node_preps:
+    - ../../node_preps/environment.sh
+  sbatch_args:
+    account: rrg-ashique
+    signal: USR1@90
+    cpus-per-task: 36
+    mem-per-cpu: 4G
+    # time: 0-5:58:00
+    time: 0-11:58:00
+    gres: gpu:1
+  source_info:
+    dir: ../../
+    copy: true
+    exclude: ['.*', '__pycache__/', '*.egg-info', 'job_files/', 'srun_errors.txt', 'logs/', 'slurm-*.out', '/envhes/', '/DeepOBS/', '/backpack/', '/build/', '/cleanrl/', '/SenseAct/', 'generated_cmds/', 'plots/']
+
+  run_type: 'ReinforcementLearningRun'
+  description: 'default'
+
+

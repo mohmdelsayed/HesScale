@@ -1,6 +1,7 @@
 from core.task.stationary_mnist import StationaryMNIST
 from core.task.label_permuted_emnist import LabelPermutedEMNIST
 from core.task.input_permuted_mnist import InputPermutedMNIST
+from core.task.cifar100 import Cifar100
 from core.task.cartpole import CartPole
 from core.task.mujoco_env import MujocoEnv
 
@@ -8,6 +9,7 @@ from core.network.fcn_leakyrelu import FCNLeakyReLU, FCNLeakyReLUSmallWithNoBias
 from core.network.fcn_relu import FCNReLU, FCNReLUSmallWithNoBias, FCNReLUSmall, FCNReLUSmallSoftmax
 from core.network.fcn_tanh import FCNTanh, FCNTanhSmallWithNoBias, FCNTanhSmall, FCNTanhSmallSoftmax
 from core.network.cnn_relu import CNNReLU
+from core.network.old_nets import net_cifar10_3c3d, net_cifar100_allcnnc
 
 from core.learner.sl.sgd import SGDLearner
 from core.learner.sl.sgd_with_scaling import SGDScaledLearner, SGDScaledSqrtLearner
@@ -35,6 +37,7 @@ tasks = {
     "stationary_mnist" : StationaryMNIST,
     "input_permuted_mnist": InputPermutedMNIST,
     "label_permuted_emnist" : LabelPermutedEMNIST,
+    "cifar-100" : Cifar100,
 }
 
 environments = {
@@ -56,6 +59,8 @@ networks = {
     "fcn_tanh_small_softmax": FCNTanhSmallSoftmax,
     "fcn_tanh_small_no_bias": FCNTanhSmallWithNoBias,
     "cnn_relu": CNNReLU,
+    "3c3d": net_cifar10_3c3d,
+    "allcnn": net_cifar100_allcnnc,
 }
 
 learners = {
