@@ -22,8 +22,9 @@ class SLRun:
         self.n_epochs = int(n_epochs)
         batch_size = int(batch_size)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.task = tasks[task](train=True, batch_size=batch_size)
-        self.task_test = tasks[task](train=False, batch_size=batch_size)
+        self.task = tasks[task](subset='train', batch_size=batch_size)
+        self.task_valid = tasks[task](subset='valid', batch_size=batch_size)
+        self.task_test = tasks[task](subset='test', batch_size=batch_size)
 
         self.exp_name = exp_name
         self.learner = learners[learner](networks[network], kwargs)
@@ -50,11 +51,13 @@ class SLRun:
         }
 
         l_train, a_train = [], []
+        l_valid, a_valid = [], []
         l_test, a_test = [], []
         times = []
         try:
             t0 = time.time()
             for e in range(self.n_epochs):
+                self.learner.train(True)
                 self.task.reset()
                 b = 0
                 l_epoch, a_epoch = [], []
@@ -80,6 +83,30 @@ class SLRun:
                 l_train.append(statistics.mean(l_epoch))
                 a_train.append(statistics.mean(a_epoch))
 
+                self.learner.train(False)
+                self.task_valid.reset()
+                bv = 0
+                l_epoch, a_epoch = [], []
+                while True:
+                    input, target = next(self.task_valid)
+                    if input is None:
+                        break
+                    input, target = input.to(self.device), target.to(self.device)
+                    output = self.learner.predict(input)
+                    loss = criterion(output, target)
+                    # check if loss is nan
+                    if torch.isnan(loss):
+                        raise ValueError("Loss is nan")
+                    l_epoch.append(loss.item())
+                    a_epoch.append((output.argmax(dim=1) == target).float().mean().item())
+
+                    # print(bv)
+                    bv += 1
+
+                l_valid.append(statistics.mean(l_epoch))
+                a_valid.append(statistics.mean(a_epoch))
+
+                self.learner.train(False)
                 self.task_test.reset()
                 bt = 0
                 l_epoch, a_epoch = [], []
@@ -105,14 +132,28 @@ class SLRun:
 
                 print(f'epoch {e} - train acc {a_train[-1]:.3f} - test acc {a_test[-1]:.3f}')
 
+                if e % 100 == 0:
+                    logging_data.update({
+                        'loss_train': l_train,
+                        'loss_valid': l_valid,
+                        'loss_test': l_test,
+                        'accuracies_train': a_train,
+                        'accuracies_valid': a_valid,
+                        'accuracies_test': a_test,
+                        'times': times,
+                    })
+                    self.logger.log(**logging_data)
+
         except (ValueError) as err:
             print(err)
             logging_data.update({'diverged': True})
 
         logging_data.update({
             'loss_train': l_train,
+            'loss_valid': l_valid,
             'loss_test': l_test,
             'accuracies_train': a_train,
+            'accuracies_valid': a_valid,
             'accuracies_test': a_test,
             'times': times,
         })

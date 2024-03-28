@@ -11,23 +11,26 @@
       # adaggnmc,
       # bl89,
       ]
-    lr: [.00001, .0001, .001, .01, .1, 1.]
+    # lr: [.00001, .0001, .001, .01, .1, 1.]
+    # lr: [.0001, .001, .01]
+    # lr: [.01]
+    lr: [.1]
     # lr: [.00001]
     task: 'cifar-100'
 
     # network: '3c3d'
     # batch_size: 128
     # # n_epochs: 200
-    # # exp_name: sl_3c3d
+    # # exp_name: sl_3c3d_mods_noaug
     # n_epochs: 2000
-    # exp_name: sl_3c3d_long
+    # exp_name: sl_3c3d_mods_long_final
 
     network: 'allcnn'
     batch_size: 256
     # n_epochs: 350
-    # exp_name: sl_allcnn
+    # exp_name: sl_allcnn_mods
     n_epochs: 3500
-    exp_name: sl_allcnn_long
+    exp_name: sl_allcnn_mods_long_final
 
   script: ../../core/run/sl_run.py
   # admin_args:
@@ -41,7 +44,8 @@
     cpus-per-task: 36
     mem-per-cpu: 4G
     # time: 0-5:58:00
-    time: 0-11:58:00
+    time: 0-23:58:00
+    # time: 0-2:58:00
     gres: gpu:1
   source_info:
     dir: ../../

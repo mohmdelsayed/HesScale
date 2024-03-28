@@ -36,3 +36,6 @@ class Learner:
 
     def zero_grad(self):
         self.optimizer.zero_grad()
+
+    def train(self, mode=True):
+        self.network.train(mode)
