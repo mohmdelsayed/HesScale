@@ -2,7 +2,7 @@ import os
 import json
 import copy
 import numpy as np
-from torch import sub
+from torch import div, sub
 
 import core.plot.rl_plotter
 
@@ -59,6 +59,40 @@ class BestConfig:
             if measure == "losses":
                 best_configs.append(min(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
             elif measure in ["accuracies", "returns"]:
+                best_configs.append(max(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
+            else:
+                raise Exception("measure must be loss or accuracy")
+        return best_configs
+
+    def get_best_run_sl(self, measure="losses", filter_key=None):
+        best_configs = []
+        for learner, optim in zip(self.learners, self.optims):
+            # path = f"logs/{self.task_name}/{learner}/{self.network_name}/"
+            path = f"logs/{self.exp_name}/{self.task_name}/{learner}/{optim}/{self.network_name}/"
+            subdirectories = [f.path for f in os.scandir(path) if f.is_dir()]
+
+            configs = {}
+            # loop over all hyperparameters configurations
+            if filter_key is not None:
+                subdirectories = filter(lambda k: filter_key in k, subdirectories)
+            for subdirectory in subdirectories:
+                seeds = os.listdir(f'{subdirectory}')
+                configuration_list = []
+                diverged = False
+                for seed in seeds:
+                    with open(f"{subdirectory}/{seed}") as json_file:
+                        data = json.load(json_file)
+                        diverged = diverged or data.get('diverged', False)
+                        configuration_list.append(data[measure])
+                if diverged:
+                    continue
+
+                mean_list = np.nan_to_num(np.array(configuration_list), nan=np.iinfo(np.int32).max).mean(axis=-1)
+                configs[subdirectory] = {}
+                configs[subdirectory]["means"] = mean_list
+            if 'loss' in measure:
+                best_configs.append(min(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
+            elif "accuracies" in measure:
                 best_configs.append(max(configs.keys(), key=(lambda k: sum(configs[k]["means"]))))
             else:
                 raise Exception("measure must be loss or accuracy")
