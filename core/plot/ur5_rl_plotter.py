@@ -1,0 +1,358 @@
+import argparse
+import json
+import copy
+import matplotlib.pyplot as plt
+import core.best_config
+import os
+import re
+import itertools
+import numpy as np
+import matplotlib
+from pathlib import Path
+matplotlib.rcParams['axes.spines.right'] = False
+matplotlib.rcParams['axes.spines.top'] = False
+matplotlib.rcParams["axes.spines.right"] = False
+matplotlib.rcParams["axes.spines.top"] = False
+matplotlib.rcParams["pdf.fonttype"] = 42
+matplotlib.rcParams["ps.fonttype"] = 42
+matplotlib.rcParams.update({'font.size': 12})
+
+def bin_episodes(t, G, bin_wid, interval=None):
+    t_tails, G_means, G_stds, G_stderrs, t_bins, G_bins = [], [], [], [], [], []
+    if interval is not None:
+        interval_idx = np.logical_and((t > interval[0]), (t <= interval[1]))
+        t, G = t[interval_idx], G[interval_idx]
+    for i in range(bin_wid, t[-1] + bin_wid, bin_wid):
+        bin_idx = np.logical_and((t > i - bin_wid), (t <= i))
+        if not np.any(bin_idx):
+            continue
+
+        t_bin = t[bin_idx]
+        G_bin = G[bin_idx]
+        t_tails.append(i)
+        G_means.append(np.mean(G_bin))
+        G_stds.append(np.std(G_bin))
+        G_stderrs.append(np.std(G_bin) / np.sqrt(G_bin.shape[0]))
+        t_bins.append(t_bin)
+        G_bins.append(G_bin)
+
+    return np.array(t_tails), np.array(G_means), np.array(G_stds), np.array(G_stderrs), t_bins, G_bins
+
+class Cache:
+    def __init__(self, path) -> None:
+        self.path = path
+        self.data = {}
+        self.updated = False
+        if path.exists():
+            with open(path) as f:
+                self.data = json.load(f)
+
+    def has(self, key):
+        return key in self.data.keys()
+
+    def get(self, key):
+        return self.data.get(key, None)
+
+    def set(self, key, data):
+        self.data[key] = data
+        self.updated = True
+
+    def __del__(self):
+        if self.updated:
+            with open(self.path, 'wt') as f:
+                json.dump(self.data, f)
+            print('Cache updated')
+
+class RLPlotter:
+    def __init__(self, best_runs_path, exp_name, task_name, avg_interval=10000, what_to_plot="losses", ylim=[-700.0, 4000.0], plot_id='0'):
+        self.best_runs_path = best_runs_path
+        self.exp_name = exp_name
+        self.avg_interval = avg_interval
+        self.task_name = task_name
+        self.what_to_plot = what_to_plot
+        self.plot_id = plot_id
+        self.ylim = ylim
+
+    def plot(self, cache, legend=True):
+        plt.figure(figsize=(6, 2.4))
+        for subdir in self.best_runs_path:
+            # seeds = os.listdir(f'{subdir}')
+            ts_list = []
+            configuration_list = []
+            diverged = False
+            seeds = np.arange(5)
+            for seed in seeds:
+                key = f'{subdir}/{seed}.json'.split('experiments/rl/')[-1]
+                data = cache.get(key)
+                if data is None:
+                    with open(f"{subdir}/{seed}.json") as json_file:
+                        data = json.load(json_file)
+                if data.get('diverged', False):
+                    diverged = True
+                    break
+                n_bins = 40
+                bin_wid = data['n_samples'] // n_bins
+                ts, rets, _, _, _, _ = bin_episodes(np.array(data['ts']), np.array(data[self.what_to_plot]), bin_wid)
+                if not cache.has(key):
+                    data_copy = copy.deepcopy(data)
+                    data_copy.update({'ts': ts.tolist(), self.what_to_plot: rets.tolist()})
+                    cache.set(key, data_copy)
+                ts_list.append(ts[:n_bins])
+                configuration_list.append(rets[:n_bins])
+                learner_name = data["learner"]
+                optim = data["optimizer"]
+
+            if diverged:
+                print(f'Warning: diverged -- {subdir}')
+                continue
+
+            ts = ts_list[0]
+            n_seeds = len(seeds)
+            configuration_list = np.array(configuration_list).reshape(len(seeds), len(configuration_list[0]) // self.avg_interval, self.avg_interval).mean(axis=-1)
+            mean_list = np.array(configuration_list).mean(axis=0)
+            std_list = np.array(configuration_list).std(axis=0) / np.sqrt(len(seeds))
+            label = get_optim_label(optim)
+            color = get_optim_color(optim)
+
+            # plt.plot(ts, mean_list, label=label, color=color)
+            # plt.fill_between(ts, mean_list - std_list, mean_list + std_list, alpha=0.2, color=color)
+            linewidth = .9
+            plt.plot(ts, configuration_list[0], label=label, color=color, linewidth=linewidth)
+            for run in configuration_list[1:]:
+                plt.plot(ts, run, color=color, linewidth=linewidth)
+
+            if self.what_to_plot == "losses":
+                plt.ylim([0.0, 2.5])
+                plt.ylabel("Online Loss")
+            elif self.what_to_plot == 'returns':
+                # plt.ylim([-700.0, 1750.0])
+                plt.ylim(self.ylim)
+                # plt.ylim([-700.0, 4000.0])
+                # plt.gca().set_ylabel(f'Return\naveraged over\n{n_seeds} runs', labelpad=50, verticalalignment='center').set_rotation(0)
+                plt.gca().set_ylabel('Average Return')
+                plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+            else:
+                plt.ylim([0.0, 1.0])
+                plt.ylabel("Online Accuracy")
+            if legend:
+                plt.legend()
+        
+        plt.xlabel(f"Time Step")
+        plt.title(f'Real-Robot UR-Reacher')
+        plt_pth = Path(f'plots/{self.exp_name}/{self.plot_id}.pdf')
+        # plt_pth = Path(f'plots/{self.exp_name}_lr1/{self.plot_id}.pdf')
+        plt_pth.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(plt_pth, bbox_inches='tight')
+        plt.clf()
+
+def make_plots(cache, task_name='Ant', optim_id=0, ylim=[-700.0, 4000.0]):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--i", type=int, required=False, default=0)
+    args = parser.parse_args()
+
+    what_to_plot = "returns"
+
+#     # A2C
+#     exp_name = 'rl_a2c_3_nonorm'
+#     learner = 'a2c'
+#     network = 'fcn_tanh_small'
+
+    # PPO
+    exp_name = 'rl_ppo_ur5'
+    learner = 'ppo'
+    network = 'var_net'
+
+    # optims_list = [
+    #     ['sgd', 'adam', 'adam_scaled'],
+    # ]
+
+    optims_list = [
+        # ['sgd', 'adam', 'adam_scaled', 'adam_scaled_sqrt',],
+        # ['sgd', 'adam', 'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',],
+        # ['sgd', 'adam', 'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',],
+        # ['sgd', 'adam_scaled', 'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
+        # ['sgd', 'adam_scaled', 'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
+        # ['sgd', 'adam', 'adahessian',],
+        # ['sgd_scaled', 'sgd_scaled_sqrt', 'adam_scaled', 'adam_scaled_sqrt', 'adahessian_scaled',],
+
+        # ['adam', 'adam_scaled', 'adam_hesscale', 'adahesscale_adamstyle', 'adahesscale_adamstyle_scaled'],
+        # ['adam', 'adam_hesscale', 'adahesscale_adamstyle', 'adahesscale_adamstyle_scaled'],
+        # ['adam', 'adam_hesscale'],
+        ['adahesscale_adamstyle', 'adahesscale_adamstyle_scaled'],
+    ]
+
+#     optims_list = [
+#         ['adam_scaled', 'adam_scaled_sqrt', 'adahessian_scaled',],
+#         ['adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',],
+#         ['adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',],
+#     ]
+
+    if 'ppo' in exp_name and 'ur5' not in exp_name:
+        task_name += '-v2'
+
+    legend = True
+
+    optims = optims_list[optim_id]
+    learners = [learner for _ in optims]
+    plot_id = f'{task_name}_{optim_id}_legend_{legend}_rebuttal_allruns_hesscaleonly'
+
+    best_runs = core.best_config.BestConfig(exp_name, task_name, network, learners, optims).get_best_run(cache, measure=what_to_plot)
+    print(plot_id, best_runs)
+    # lr1_runs = [re.sub(r'lr_.*', 'lr_1.0', run) for run in best_runs]
+    # best_runs = list(itertools.chain(*[[r1, r2] for r1, r2 in zip(best_runs, lr1_runs)]))
+    plotter = RLPlotter(best_runs, exp_name, task_name=task_name, avg_interval=1, what_to_plot=what_to_plot, ylim=ylim, plot_id=plot_id)
+    plotter.plot(cache, legend=legend)
+
+def get_optim_label(optim):
+    return {
+        'adam': 'Adam',
+        'adahesscale_adamstyle': 'AdaHesScale',
+        'adam_hesscale': 'Scaled Adam',
+        'adahesscale_adamstyle_scaled': 'Scaled AdaHesScale',
+    }[optim]
+
+def get_optim_color(optim):
+    # noscale_opt = optim.split('_scaled')[0]
+    return {
+        'adam': 'tab:pink',
+        'adahessian': 'tab:brown',
+        'adahesscale_adamstyle': 'tab:green',
+        'adahesscalegn_adamstyle': 'tab:orange',
+        'adam_hesscale': 'tab:blue',
+        'adahesscale_adamstyle_scaled': 'tab:purple',
+    }[optim]
+
+def plot_learning_curves(cache):
+    # for task in ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']:
+    for task in ['ur_reacher_2d']:
+        ylim = [-120, 380]
+        for i in range(1):
+            make_plots(cache, task, i, ylim=ylim)
+
+def plot_line(ax, xs, seed_ys, label='', color='C0', linestyle='-'):
+    # ys dimension should be (nseeds, len(xs))
+    ys = seed_ys.mean(axis=0)
+    inf_idx = np.isinf(ys)
+    non_inf_idx = np.logical_not(inf_idx)
+    ys[inf_idx] = 1e15 * np.sign(ys[inf_idx])
+    y_errs = np.zeros_like(ys)
+    y_errs[non_inf_idx] = (seed_ys[:, non_inf_idx].std(axis=0) / np.sqrt(seed_ys[:, non_inf_idx].shape[0]))
+    ax.plot(xs, ys, color=color, label=label, linestyle=linestyle)
+    start = None
+    for i in range(ys.shape[0]):
+        # if only one non_inf in the middle of other infs: maybe just show an error bar
+        if non_inf_idx[i] and start is None:
+            start = i
+        elif (inf_idx[i] or i == ys.shape[0] - 1) and start is not None:
+            if i == ys.shape[0] - 1:
+                i += 1
+            ax.fill_between(xs[start:i], ys[start:i] - y_errs[start:i], ys[start:i] + y_errs[start:i], color=color, alpha=0.3)
+            start = None
+
+def get_sensitivity(cache, exp_name, learner, network, optim, task, seeds, filter_key=None):
+    path = f"logs/{exp_name}/{task}/{learner}/{optim}/{network}/"
+    subdirectories = [f.path for f in os.scandir(path) if f.is_dir()]
+    if filter_key is not None:
+        subdirectories = list(filter(lambda k: filter_key in k, subdirectories))
+
+    lrs = []
+    for subdirectory in subdirectories:
+        hit = re.search(r'lr_([^_|\/]*)', str(subdirectory))
+        lrs.append(float(hit.group(0).split('_')[1]))
+    lrs, subdirectories = list(zip(*sorted(zip(lrs, subdirectories), key=lambda x: x[0])))
+    lrs = np.array(lrs)
+    seed_ys = np.zeros((seeds.shape[0], lrs.shape[0])) - np.inf
+    for i, subdirectory in enumerate(subdirectories):
+        for seed in seeds:
+            seed_path = Path(f"{subdirectory}/{seed}.json")
+            key = str(seed_path).split('experiments/rl/')[1]
+            data = cache.get(key)
+            if data is None:
+                with open(seed_path) as json_file:
+                    data = json.load(json_file)
+            if data.get('diverged', False):
+                continue
+            n_bins = 100
+            bin_wid = data['n_samples'] // n_bins
+            ts, rets, _, _, _, _ = bin_episodes(np.array(data['ts']), np.array(data['returns']), bin_wid)
+            if not cache.has(key):
+                data_copy = copy.deepcopy(data)
+                data_copy.update({'ts': ts.tolist(), 'returns': rets.tolist()})
+                cache.set(key, data_copy)
+            seed_ys[seed, i] = np.array(rets).mean()
+
+    # if filter_key == 'delta_0.001':
+    #     print(seed_ys)
+    return lrs, seed_ys
+
+def plot_sensitivity(cache):
+    optims = [
+        'sgd', 'sgd_scaled', 'sgd_scaled_sqrt', 'adam', 'adam_scaled', 'adam_scaled_sqrt', 'adahessian', 'adahessian_scaled',
+        'adahesscalegn', 'adahesscalegn_sqrt', 'adahesscalegn_adamstyle',
+        'adahesscale', 'adahesscale_sqrt', 'adahesscale_adamstyle',
+        'adahesscalegn_scaled', 'adahesscalegn_sqrt_scaled', 'adahesscalegn_adamstyle_scaled',
+        'adahesscale_scaled', 'adahesscale_sqrt_scaled', 'adahesscale_adamstyle_scaled',
+
+        # 'adahesscale_adamstyle_scaled',
+        # 'adam'
+    ]
+
+    tasks = ['Ant', 'Walker2d', 'HalfCheetah', 'Hopper', 'InvertedDoublePendulum']
+    # tasks = ['Hopper']
+    # ylim = [-700., 4000.] if task != 'InvertedDoublePendulum' else [-700., 12000.]
+    ylim = [-700., 3000.]
+
+    deltas = [.00001, .0001, .001]
+
+    # # A2C
+    # exp_name = 'rl_a2c_3_nonorm'
+    # learner = 'a2c'
+    # network = 'fcn_tanh_small'
+
+    # PPO
+    exp_name = 'rl_ppo_3'
+    learner = 'ppo'
+    network = 'var_net'
+
+    seeds = np.arange(10)
+    colors = [plt.get_cmap('tab10')(i) for i in np.arange(10)]
+    for optim in optims:
+        print(optim)
+        n_cols, figsize = (3, (10., 2.4)) if 'scaled' in optim else (1, (7.767, 4.8))
+        fig, axes = plt.subplots(1, n_cols)
+        axes = np.array([axes]) if not isinstance(axes, np.ndarray) else axes.flatten()
+        fig.set_size_inches(*figsize)
+        for clr_id, task in enumerate(tasks):
+            if 'ppo' in exp_name:
+                task = task + '-v2'
+            if 'scaled' in optim:
+                for ax, delta in zip(axes, deltas):
+                    lrs, seed_ys = get_sensitivity(cache, exp_name, learner, network, optim, task, seeds, filter_key=f'delta_{delta}')
+                    plot_line(ax, lrs, seed_ys, label=task, color=colors[clr_id])
+                    ax.set_title(f'delta={delta}', fontdict={'fontsize': 10}, y=1.0)
+            else:
+                lrs, seed_ys = get_sensitivity(cache, exp_name, learner, network, optim, task, seeds)
+                plot_line(axes[0], lrs, seed_ys, task, color=colors[clr_id])
+        for ax in axes:
+            ax.set_ylim(ylim)
+            ax.set_xscale('log')
+            ylabel = f'Return\naveraged over\nentire period\nand {seeds.shape[0]} runs'
+            ax.set_ylabel(ylabel, labelpad=50, verticalalignment='center').set_rotation(0)
+            ax.label_outer()
+        leg_handles, leg_labels = axes[0].get_legend_handles_labels()
+        fig.legend(leg_handles, leg_labels)#, loc=loc)
+        fig.suptitle(f'{optim} - {learner}')
+        fig.tight_layout()
+
+        plt_pth = Path(f'plots/{exp_name}_sensit/{optim}.pdf')
+        plt_pth.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(plt_pth, bbox_inches='tight')
+
+
+def main():
+    cache = Cache(Path('logs.json'))
+    plot_learning_curves(cache)
+    # plot_sensitivity(cache)
+
+if __name__ == "__main__":
+    main()

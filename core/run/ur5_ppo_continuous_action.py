@@ -134,7 +134,7 @@ def make_env(env_id, idx, capture_video, run_name, gamma, seed=0):
                     dt=0.04,
                     run_mode="multiprocess",
                     rllab_box=False,
-                    movej_t=2.0,
+                    movej_t=1.5,
                     delay=0.0,
                     random_state=np.random.get_state()
                 )
@@ -296,7 +296,7 @@ def main():
             'n_samples': args.num_iterations * args.batch_size,
             'seed': args.seed,
     }
-    logger = Logger(log_dir='logs')
+    logger = Logger(log_dir='logs_rebuttal')
     try:
         for iteration in range(1, args.num_iterations + 1):
             # Annealing the rate if instructed to do so.
@@ -338,6 +338,12 @@ def main():
                 #             print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
                 #             writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                 #             writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+
+            logging_data.update({
+                    'ts': ts,
+                    'returns': return_per_episode,
+            })
+            logger.log(**logging_data)
 
             # bootstrap value if not done
             with torch.no_grad():
@@ -457,7 +463,11 @@ def main():
         })
     except NanNetworkOutputError as err:
         print(err)
-        logging_data.update({'diverged': True})
+        logging_data.update({
+            'diverged': True,
+            'ts': ts,
+            'returns': return_per_episode,
+        })
     except Exception as err:
         env.close()
         raise

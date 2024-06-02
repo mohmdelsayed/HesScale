@@ -17,7 +17,7 @@ class BestConfig:
     def get_best_run(self, cache, measure="losses", filter_key=None):
         best_configs = []
         for learner, optim in zip(self.learners, self.optims):
-            path = f"logs/{self.exp_name}/{self.task_name}/{learner}/{optim}/{self.network_name}/"
+            path = f"logs_rebuttal/{self.exp_name}/{self.task_name}/{learner}/{optim}/{self.network_name}/"
             subdirectories = [f.path for f in os.scandir(path) if f.is_dir()]
 
             configs = {}
